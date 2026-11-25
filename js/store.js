@@ -290,10 +290,13 @@ const Store = (() => {
   async function connectGitHub(tok) {
     const r = repoInfo();
     if (!r) throw new Error('La aplicación tiene que estar abierta desde su dirección de GitHub Pages.');
+    tok = tok.replace(/\s+/g, '');
+    if (!/^(github_pat_|ghp_)/.test(tok)) throw new Error('Eso no parece un token de GitHub: debe empezar por «github_pat_». Cópialo con el botón 📋 de GitHub.');
     const res = await fetch(`https://api.github.com/repos/${r.owner}/${r.repo}`, { headers: headers(tok) });
-    if (!res.ok) throw new Error('La clave no es válida o no tiene acceso al repositorio.');
+    if (res.status === 401) throw new Error(`GitHub no reconoce este token (error 401). Está incompleto, es antiguo o se regeneró después de copiarlo. Genera uno nuevo con «Regenerate token», cópialo con el botón 📋 y pégalo aquí (tiene ${tok.length} caracteres; uno correcto tiene unos 93).`);
+    if (!res.ok) throw new Error(`GitHub ha rechazado el token (error ${res.status}).`);
     const repo = await res.json();
-    if (repo.permissions && repo.permissions.push === false) throw new Error('La clave no tiene permiso de escritura.');
+    if (repo.permissions && repo.permissions.push === false) throw new Error(`El token funciona pero no tiene permiso para escribir en «${r.repo}». En GitHub, edita el token: Repository access → ${r.repo}, y Contents → Read and write.`);
     const newConfig = { ...config, owner: r.owner, repo: r.repo, branch: r.branch, token: await encryptToken(tok, password) };
     await saveConfig(newConfig, tok);
     token = tok;
