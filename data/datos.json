@@ -1,7 +1,7 @@
 {
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-25T11:32:04.287Z",
+ "actualizado": "2026-11-25T11:48:19.778Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -565,6 +565,13 @@
    "apellidos": "Vicente Galán",
    "cargo": "Conserje",
    "cat": "nodocente"
+  },
+  {
+   "id": "p0oud00f",
+   "nombre": "X",
+   "apellidos": "",
+   "cargo": "No hay sustitución",
+   "cat": "tutor"
   }
  ],
  "grupos": {
@@ -1037,9 +1044,7 @@
      "id": "2d5k0up",
      "t": "t34",
      "s": {
-      "1": "t35",
-      "2": "t37",
-      "3": "t39"
+      "2": "t37"
      }
     }
    ]
@@ -1047,10 +1052,32 @@
   "2026-11-26": {
    "ausencias": [
     {
-     "id": "n6ls8y8",
+     "id": "7jwhoro",
      "t": "t15",
-     "s": {},
-     "nota": "Nadie sustituye."
+     "s": {
+      "1": "p0oud00f",
+      "2": "p0oud00f",
+      "3": "p0oud00f",
+      "4": "p0oud00f",
+      "5": "p0oud00f",
+      "6": "p0oud00f"
+     }
+    }
+   ]
+  },
+  "2026-11-27": {
+   "ausencias": [
+    {
+     "id": "r68i1vk",
+     "t": "t06",
+     "s": {
+      "1": "p0oud00f",
+      "2": "p0oud00f",
+      "3": "p0oud00f",
+      "4": "p0oud00f",
+      "5": "p0oud00f",
+      "6": "p0oud00f"
+     }
     }
    ]
   }
