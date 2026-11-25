@@ -403,3 +403,17 @@ body:has(.publish-bar:not([hidden])) .foot { padding-bottom: 110px; }
 body:has(.publish-bar:not([hidden])) .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
 .last-pub { margin: 2px 0 0; font-size: .8rem; color: var(--muted); font-weight: 600; }
 @media print { .last-pub { display: none; } }
+
+/* ---------- «Nadie»: no hace falta sustituir ---------- */
+.none-x {
+  flex: none; width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center;
+  background: var(--danger); color: #fff; font-weight: 900; font-size: 1rem; line-height: 1;
+}
+.pal-none { position: sticky; top: 0; z-index: 2; background: var(--card); padding-bottom: 10px; margin-bottom: 2px; }
+.chip.chip-none { border-color: #efbcb4; border-left: 5px solid var(--danger); background: var(--danger-soft); }
+.chip.chip-none .chip-name { color: var(--danger); }
+.chip.chip-none.selected { box-shadow: 0 0 0 2px var(--danger); }
+.modal .pal-none { background: #fff; }
+.sub.none { background: #fff5f3; border-color: #efbcb4; border-left-color: var(--danger); }
+.sub.none .sub-name { color: var(--danger); display: flex; align-items: center; gap: 6px; }
+.sub.none .none-x { width: 20px; height: 20px; font-size: .75rem; }

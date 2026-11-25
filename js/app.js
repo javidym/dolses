@@ -53,7 +53,10 @@
   }
   const longDate = (s) => fromISO(s).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  const staffMap = () => Object.fromEntries(D().personal.map((p) => [p.id, p]));
+  // Valor especial para las horas en las que no hace falta que sustituya nadie
+  const NONE = '-';
+  const NONE_PERSON = { id: NONE, nombre: 'Nadie', cargo: 'No hace falta sustituir', cat: 'none' };
+  const staffMap = () => ({ ...Object.fromEntries(D().personal.map((p) => [p.id, p])), [NONE]: NONE_PERSON });
   const shortName = (p) => (p ? p.alias || p.nombre : '¿?');
   const fullName = (p) => (p ? `${p.nombre} ${p.apellidos || ''}`.trim() : 'Persona eliminada');
   const activeStaff = () => D().personal.filter((p) => !p.baja);
@@ -86,13 +89,13 @@
   function countsAll() {
     const c = {};
     for (const day of Object.values(D().dias)) {
-      for (const a of day.ausencias || []) for (const id of Object.values(a.s || {})) if (id) c[id] = (c[id] || 0) + 1;
+      for (const a of day.ausencias || []) for (const id of Object.values(a.s || {})) if (id && id !== NONE) c[id] = (c[id] || 0) + 1;
     }
     return c;
   }
   function countsDay(date) {
     const c = {};
-    for (const a of dayOf(date).ausencias) for (const id of Object.values(a.s || {})) if (id) c[id] = (c[id] || 0) + 1;
+    for (const a of dayOf(date).ausencias) for (const id of Object.values(a.s || {})) if (id && id !== NONE) c[id] = (c[id] || 0) + 1;
     return c;
   }
 
@@ -185,7 +188,7 @@
     } else {
       // Quién está ocupado en cada hora (para avisar de solapes)
       const busy = {};
-      for (const a of day.ausencias) for (const [k, id] of Object.entries(a.s || {})) if (id) (busy[k + '|' + id] = busy[k + '|' + id] || []).push(a.t);
+      for (const a of day.ausencias) for (const [k, id] of Object.entries(a.s || {})) if (id && id !== NONE) (busy[k + '|' + id] = busy[k + '|' + id] || []).push(a.t);
       const absentIds = new Set(day.ausencias.map((a) => a.t));
 
       let html = '<div class="board-grid">';
@@ -201,7 +204,13 @@
           const sid = (a.s || {})[s.k];
           const sp = sid ? map[sid] : null;
           let inner;
-          if (sid) {
+          if (sid === NONE) {
+            inner = `<div class="sub none" title="No hace falta que sustituya nadie">
+              <span class="sub-name"><span class="none-x" aria-hidden="true">✕</span> Nadie</span>
+              <span class="sub-role">No hace falta sustituir</span>
+              ${editing ? `<button class="sub-x" data-act="clear" aria-label="Quitar marca">${ICON.x}</button>` : ''}
+            </div>`;
+          } else if (sid) {
             const clash = (busy[s.k + '|' + sid] || []).length > 1;
             const isAbsent = absentIds.has(sid);
             const warn = clash ? 'Tiene otra sustitución a esta hora' : isAbsent ? 'También está ausente hoy' : '';
@@ -229,7 +238,7 @@
     if (editing && state.selected) {
       const p = map[state.selected];
       hint.hidden = false;
-      hint.innerHTML = `<span>Toca la hora en la que sustituirá <b>${esc(shortName(p))}</b>.</span><button class="btn btn-outline btn-sm" id="cancelSel">Cancelar</button>`;
+      hint.innerHTML = `<span>${state.selected === NONE ? 'Toca la hora en la que <b>no hace falta sustituir</b>.' : `Toca la hora en la que sustituirá <b>${esc(shortName(p))}</b>.`}</span><button class="btn btn-outline btn-sm" id="cancelSel">Cancelar</button>`;
       $('#cancelSel').onclick = () => { state.selected = null; renderAll(); };
     } else hint.hidden = true;
   }
@@ -247,12 +256,19 @@
       <span class="chip-text"><span class="chip-name">${esc(shortName(p))}</span><span class="chip-role">${esc(p.cargo || '')}${p.alias ? ' · ' + esc(p.nombre) : ''}</span></span>
       ${t || n ? `<span class="chip-count${t ? ' today' : ''}">${t ? t + ' hoy' : n}</span>` : ''}</button>`;
   }
-  function groupedListHTML(list, date, q, { guardFirst = true } = {}) {
+  // Opción fija al principio de la lista: en esa hora no sustituye nadie
+  function noneChipHTML() {
+    return `<div class="pal-none"><button class="chip chip-none${state.selected === NONE ? ' selected' : ''}" data-id="${NONE}" title="En esa hora no hace falta que sustituya nadie">
+      <span class="none-x" aria-hidden="true">✕</span>
+      <span class="chip-text"><span class="chip-name">Nadie</span><span class="chip-role">No hace falta sustituir</span></span></button></div>`;
+  }
+  function groupedListHTML(list, date, q, { guardFirst = true, withNone = false } = {}) {
     const totals = countsAll();
     const today = countsDay(date);
     const filtered = sortStaff(list.filter((p) => matches(p, q)));
-    if (!filtered.length) return `<div class="no-results">Nadie coincide con «${esc(q)}».</div>`;
-    let html = '';
+    const none = withNone ? noneChipHTML() : '';
+    if (!filtered.length) return none + `<div class="no-results">Nadie coincide con «${esc(q)}».</div>`;
+    let html = none;
     const g = guardFirst ? guardOf(date) : null;
     const inGuard = new Set(g ? g.members : []);
     const guardList = filtered.filter((p) => inGuard.has(p.id));
@@ -274,7 +290,7 @@
     const blocked = isWeekend(state.date) || calOf(state.date).festivo;
     $('#paletteList').innerHTML = blocked
       ? '<div class="no-results">No hay clase este día.</div>'
-      : groupedListHTML(substituteCandidates(state.date), state.date, state.query);
+      : groupedListHTML(substituteCandidates(state.date), state.date, state.query, { withNone: true });
   }
 
   function renderAll() {
@@ -293,15 +309,16 @@
     a.s = a.s || {};
     // En la primera sesión del día, preguntar si la sustitución es para toda la jornada
     const sessions = slotsFor(state.date).filter((s) => !s.patio);
-    if (ask && sessions.length > 1 && sessions[0].k === slotKey) {
+    if (ask && teacherId !== NONE && sessions.length > 1 && sessions[0].k === slotKey) {
       askWholeDay(a, teacherId, sessions);
       return;
     }
-    const others = dayOf(state.date).ausencias.filter((x) => x !== a && (x.s || {})[slotKey] === teacherId);
+    const others = teacherId === NONE ? [] : dayOf(state.date).ausencias.filter((x) => x !== a && (x.s || {})[slotKey] === teacherId);
     a.s[slotKey] = teacherId;
     Store.markDirty('dias:' + state.date);
     const p = staffMap()[teacherId];
-    if (others.length) toast(`⚠ ${shortName(p)} ya tiene otra sustitución a esa hora`, true);
+    if (teacherId === NONE) toast('✕ Marcado: en esa hora no hace falta sustituir');
+    else if (others.length) toast(`⚠ ${shortName(p)} ya tiene otra sustitución a esa hora`, true);
     else toast(`${shortName(p)} asignado/a`);
     state.selected = null;
     renderAll();
@@ -350,17 +367,17 @@
     renderAll();
   }
 
-  function pickTeacher({ title, list, onPick, guardFirst = true }) {
+  function pickTeacher({ title, list, onPick, guardFirst = true, withNone = false }) {
     const wrap = document.createElement('div');
     wrap.innerHTML = `<div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" placeholder="Buscar por nombre…" autocomplete="off"></div><div class="palette-list pick-list-wrap"></div>`;
     const input = $('input', wrap);
     const listEl = $('.pick-list-wrap', wrap);
-    const draw = () => { listEl.innerHTML = groupedListHTML(list, state.date, input.value, { guardFirst }); };
+    const draw = () => { listEl.innerHTML = groupedListHTML(list, state.date, input.value, { guardFirst, withNone }); };
     draw();
     const m = modal({ title, body: wrap });
     input.addEventListener('input', draw);
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { const first = $('.chip', listEl); if (first) first.click(); }
+      if (e.key === 'Enter') { const first = $('.chip:not(.chip-none)', listEl); if (first) first.click(); }
     });
     listEl.addEventListener('click', (e) => {
       const c = e.target.closest('.chip');
@@ -530,6 +547,7 @@
       pickTeacher({
         title: `Sustituye a ${shortName(p)} · ${s.ini}–${s.fin}`,
         list: substituteCandidates(state.date),
+        withNone: true,
         onPick: (id) => assign(absId, slot.dataset.slot, id),
       });
     });
@@ -546,7 +564,7 @@
     });
     $('#search').addEventListener('input', (e) => { state.query = e.target.value; renderPalette(); });
     $('#search').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { const c = $('#paletteList .chip'); if (c) c.click(); }
+      if (e.key === 'Enter') { const c = $('#paletteList .chip:not(.chip-none)'); if (c) c.click(); }
       if (e.key === 'Escape') { e.target.value = ''; state.query = ''; renderPalette(); }
     });
     $('#btnAddAbsence').onclick = addAbsence;
@@ -586,7 +604,7 @@
       t += `\n❌ ${shortName(p)}${p && p.cargo ? ' (' + p.cargo + ')' : ''}${a.nota ? ' – ' + a.nota : ''}\n`;
       for (const s of slots) {
         const sid = (a.s || {})[s.k];
-        t += `   ${s.ini}-${s.fin}${s.patio ? ' patio' : ''}: ${sid ? shortName(map[sid]) : '—'}\n`;
+        t += `   ${s.ini}-${s.fin}${s.patio ? ' patio' : ''}: ${sid === NONE ? 'no hace falta' : sid ? shortName(map[sid]) : '—'}\n`;
       }
     }
     return t;
