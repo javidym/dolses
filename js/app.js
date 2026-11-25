@@ -1059,8 +1059,27 @@
     };
   }
 
+  // Vuelve a descargar lo último publicado (el borrador sin publicar se conserva)
+  async function refreshDay() {
+    const btn = $('#btnRefresh');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.classList.add('spinning');
+    try {
+      await Store.reload();
+      renderAll();
+      toast(Store.pendingCount ? 'Actualizado (tus cambios sin publicar se mantienen)' : '✓ Actualizado con lo último publicado');
+    } catch {
+      toast('No se pudo actualizar. Comprueba la conexión.', true);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('spinning');
+    }
+  }
+
   /* ================= inicio ================= */
   function initTop() {
+    $('#btnRefresh').onclick = refreshDay;
     $('#btnEdit').onclick = toggleEdit;
     $('#btnSettings').onclick = () => openSettings();
     $('#btnPrint').onclick = () => print();
