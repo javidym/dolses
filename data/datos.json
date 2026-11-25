@@ -1,7 +1,7 @@
 {
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-25T12:05:50.873Z",
+ "actualizado": "2026-11-25T12:06:35.061Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -1073,6 +1073,21 @@
       "5": "t54",
       "6": "t37"
      },
+     "ocultas": [
+      "P"
+     ]
+    }
+   ]
+  },
+  "2026-11-27": {
+   "ausencias": [
+    {
+     "id": "507yufn",
+     "t": "t06",
+     "s": {
+      "D": "-"
+     },
+     "dia": true,
      "ocultas": [
       "P"
      ]
