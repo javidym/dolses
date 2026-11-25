@@ -1,7 +1,7 @@
 {
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-25T12:06:35.061Z",
+ "actualizado": "2026-11-25T12:06:45.325Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -1055,7 +1055,7 @@
      "id": "ct78c0b",
      "t": "t15",
      "s": {
-      "D": "p0oud00f"
+      "D": "-"
      },
      "dia": true,
      "ocultas": [
