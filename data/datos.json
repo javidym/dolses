@@ -1,7 +1,7 @@
 {
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-25T13:58:50.640Z",
+ "actualizado": "2026-11-25T18:00:52.087Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -1038,17 +1038,6 @@
   }
  },
  "dias": {
-  "2026-11-25": {
-   "ausencias": [
-    {
-     "id": "2d5k0up",
-     "t": "t34",
-     "s": {
-      "2": "t37"
-     }
-    }
-   ]
-  },
   "2026-11-26": {
    "ausencias": [
     {
