@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16507e"/>
+      <stop offset="1" stop-color="#0c3456"/>
+    </linearGradient>
+    <clipPath id="c"><circle cx="256" cy="256" r="176"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#ffffff" stroke-width="12" opacity=".9"/>
+  <circle cx="256" cy="256" r="176" fill="#fdf8ef"/>
+  <g clip-path="url(#c)">
+    <!-- sol -->
+    <circle cx="352" cy="150" r="30" fill="#f2b84b"/>
+    <!-- mar -->
+    <rect x="60" y="292" width="400" height="200" fill="#2a8fb0"/>
+    <path d="M60 292 q22 -26 44 0 q22 -26 44 0 q22 -26 44 0 q22 -26 44 0 q22 -26 44 0 q22 -26 44 0 q22 -26 44 0 q22 -26 44 0 q22 -26 44 0 v20 H60z" fill="#2a8fb0"/>
+    <!-- palmera grande -->
+    <path d="M238 300 C232 250 236 196 262 150" fill="none" stroke="#0c3456" stroke-width="13" stroke-linecap="round"/>
+    <g fill="#1d8a7a">
+      <path d="M262 150 C238 122 200 118 170 136 C202 132 228 140 252 160z"/>
+      <path d="M262 150 C252 112 222 94 192 92 C222 106 240 124 252 156z"/>
+      <path d="M262 150 C282 116 318 108 346 120 C314 122 290 136 270 160z"/>
+      <path d="M262 150 C292 146 322 166 334 196 C312 172 290 164 268 162z"/>
+      <path d="M262 150 C236 156 214 178 208 206 C226 182 246 170 262 164z"/>
+    </g>
+    <!-- palmera pequeña -->
+    <path d="M196 302 C192 270 196 240 212 214" fill="none" stroke="#0c3456" stroke-width="10" stroke-linecap="round"/>
+    <g fill="#26a08c">
+      <path d="M212 214 C194 196 166 194 146 206 C170 204 190 210 206 224z"/>
+      <path d="M212 214 C228 192 256 188 276 198 C252 198 234 208 218 224z"/>
+      <path d="M212 214 C192 220 178 238 176 258 C190 240 202 230 214 226z"/>
+      <path d="M212 214 C232 216 248 232 252 252 C238 236 226 228 212 226z"/>
+    </g>
+    <!-- libro abierto -->
+    <path d="M110 372 C170 340 220 344 256 368 C292 344 342 340 402 372 V460 C342 430 292 432 256 454 C220 432 170 430 110 460z" fill="#fdf8ef"/>
+    <path d="M110 372 C170 340 220 344 256 368 C292 344 342 340 402 372" fill="none" stroke="#0c3456" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M256 368 V454" stroke="#0c3456" stroke-width="10"/>
+    <path d="M140 396 C180 380 214 382 238 396 M140 420 C180 404 214 406 238 420 M274 396 C298 382 332 380 372 396 M274 420 C298 406 332 404 372 420" fill="none" stroke="#9fb6c8" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <!-- insignia de sustitución -->
+  <circle cx="392" cy="392" r="66" fill="#f2b84b" stroke="#0c3456" stroke-width="10"/>
+  <g fill="none" stroke="#0c3456" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M360 380 a34 34 0 0 1 58 -16"/>
+    <path d="M420 350 v16 h-16"/>
+    <path d="M424 404 a34 34 0 0 1 -58 16"/>
+    <path d="M364 434 v-16 h16"/>
+  </g>
+</svg>

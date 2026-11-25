@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sustituciones · CEIP Los Dolses</title>
+  <meta name="description" content="Sustituciones diarias del claustro del CEIP Los Dolses (Orihuela Costa)">
+  <meta name="theme-color" content="#0c3456">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sustituciones">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon.svg" alt="" class="brand-logo" width="44" height="44">
+      <div class="brand-text">
+        <strong>Sustituciones</strong>
+        <span>CEIP Los Dolses · Orihuela Costa</span>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="syncStatus" class="sync" hidden></span>
+      <button id="btnInstall" class="btn btn-sun" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
+        <span>Añadir al móvil</span>
+      </button>
+      <button id="btnSettings" class="btn btn-ghost" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="18" r="2"/></svg>
+        <span>Ajustes</span>
+      </button>
+      <button id="btnEdit" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        <span>Editar</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="daybar">
+      <div class="datenav">
+        <button id="prevDay" class="icon-btn" aria-label="Día anterior">
+          <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>
+        </button>
+        <label class="date-display" title="Cambiar fecha">
+          <span class="date-label">Sustituciones para el</span>
+          <span id="dateText" class="date-text"></span>
+          <input id="dateInput" type="date" aria-label="Elegir fecha">
+        </label>
+        <button id="nextDay" class="icon-btn" aria-label="Día siguiente">
+          <svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+        <button id="todayBtn" class="btn btn-outline btn-sm">Hoy</button>
+      </div>
+      <div id="guardCard" class="guard"></div>
+    </section>
+
+    <div id="dayNotice"></div>
+
+    <div class="layout" id="layout">
+      <section class="board-wrap">
+        <div class="board-head">
+          <h2>Ausencias y sustituciones</h2>
+          <div class="board-tools">
+            <button id="btnShare" class="btn btn-outline btn-sm">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+              <span>Compartir</span>
+            </button>
+            <button id="btnPrint" class="btn btn-outline btn-sm">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg>
+              <span>Imprimir</span>
+            </button>
+          </div>
+        </div>
+        <p id="selectHint" class="select-hint" hidden></p>
+        <div id="board" class="board"></div>
+        <button id="btnAddAbsence" class="add-absence" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Añadir maestro/a que falta
+        </button>
+      </section>
+
+      <aside id="palette" class="palette" hidden>
+        <div class="palette-inner">
+          <h2>¿Quién sustituye?</h2>
+          <p class="palette-help">Arrastra un nombre a su hora, o tócalo y después toca la hora.</p>
+          <div class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input id="search" type="search" placeholder="Buscar por nombre…" autocomplete="off">
+          </div>
+          <div id="paletteList" class="palette-list"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <img src="img/escudo.jpg" alt="Escudo del CEIP Los Dolses" width="56" height="56">
+    <span>CEIP Los Dolses · Orihuela Costa · Jefatura de estudios</span>
+  </footer>
+
+  <div id="modalRoot"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
