@@ -1,7 +1,7 @@
 {
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-25T10:56:28.609Z",
+ "actualizado": "2026-11-25T10:56:53.769Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -1069,6 +1069,11 @@
     {
      "id": "4ssk2b4",
      "t": "t11",
+     "s": {}
+    },
+    {
+     "id": "ilwydg3",
+     "t": "t26",
      "s": {}
     }
    ]
