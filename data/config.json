@@ -2,5 +2,13 @@
   "clave": {
     "salt": "pChq6eIWOnmMMcMIDEQdNg==",
     "hash": "ONfDZf4IHfnAIR5ed+zA8h27iZMdwX4vdoBYO3lqckU="
+  },
+  "owner": "javidym",
+  "repo": "dolses",
+  "branch": "main",
+  "token": {
+    "salt": "Tj8PRNPdharr3KR76ChkOg==",
+    "iv": "FZ9CMfK73CbkNzrc",
+    "ct": "Og+vicxYrZfNaSOUlpxl2bDO7a8pXotiCbTRAUmDFSS2Om74m9wKe63uetslMsGgk1KwIRwvfeTSvYnJiDoty4u/A9PAAs2KCndIYA9lAIx82qERcKW4B1SkD2X1oK84q+I1xWoEMG0lCdQxFQ=="
   }
 }
