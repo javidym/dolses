@@ -417,3 +417,31 @@ body:has(.publish-bar:not([hidden])) .toast { bottom: calc(150px + env(safe-area
 .sub.none { background: #fff5f3; border-color: #efbcb4; border-left-color: var(--danger); }
 .sub.none .sub-name { color: var(--danger); display: flex; align-items: center; gap: 6px; }
 .sub.none .none-x { width: 20px; height: 20px; font-size: .75rem; }
+
+/* ---------- todo el día y horas a medida ---------- */
+.slot.whole { background: linear-gradient(90deg, #fff8e8, #fff); min-height: 72px; }
+.slot.whole .slot-time { white-space: normal; font-size: 1.05rem; }
+.slot.whole .slot-time small { color: var(--navy-2); font-size: .78rem; text-transform: none; letter-spacing: 0; }
+.slot-hide {
+  border: 0; background: none; padding: 0 0 0 4px; color: #8a96a3; font: inherit; font-size: .68rem; font-weight: 700;
+  text-transform: none; letter-spacing: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.slot-hide:hover { color: var(--danger); }
+.slot-none-left { padding: 16px; color: var(--muted); font-weight: 600; text-align: center; }
+.mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mode-btn {
+  display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 12px;
+  border: 2px solid var(--line); background: #fbfcfd; cursor: pointer;
+}
+.mode-btn b { color: var(--navy); font-size: 1rem; }
+.mode-btn small { color: var(--muted); font-weight: 600; }
+.mode-btn.on { border-color: var(--sun); background: var(--sun-soft); box-shadow: 0 0 0 1px var(--sun); }
+.hours-list { display: grid; gap: 6px; }
+.hour-row {
+  display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font-weight: 700; color: var(--navy);
+}
+.hour-row input { width: 20px; height: 20px; accent-color: var(--navy); }
+.hour-row small { color: var(--muted); font-weight: 700; font-size: .75rem; text-transform: uppercase; }
+.hour-row.patio { background: #f4fbf9; }
+.hour-row:has(input:not(:checked)) { opacity: .55; }

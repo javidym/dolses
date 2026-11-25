@@ -23,6 +23,7 @@
     x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
     edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
     trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+    clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>',
     left: '<svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>',
     right: '<svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>',
@@ -173,11 +174,42 @@
     $('#dayNotice').innerHTML = notes.map(([c, t]) => `<div class="notice ${c}">${ICON.info}<span>${t}</span></div>`).join('');
   }
 
+  /* ================= horas de cada ausencia =================
+   * Cada ausencia puede tener:
+   *  - a.ocultas: franjas quitadas a mano (solo falta unas horas)
+   *  - a.dia: true → todas sus sesiones se muestran en una sola fila «Todo el día»
+   *    cuyo sustituto se guarda en a.s.D (el patio sigue aparte) */
+  const DAY_KEY = 'D';
+  // Franjas de esa ausencia que siguen a la vista, en el orden del horario
+  function absSlots(a, date = state.date) {
+    const hidden = new Set(a.ocultas || []);
+    return slotsFor(date).filter((s) => !hidden.has(s.k));
+  }
+  function absSessions(a, date) { return absSlots(a, date).filter((s) => !s.patio); }
+  // Filas que se pintan en la tarjeta
+  function visibleSlots(a, date = state.date) {
+    const all = absSlots(a, date);
+    if (!a.dia) return all;
+    const ses = all.filter((s) => !s.patio);
+    if (!ses.length) return all;
+    return [{ k: DAY_KEY, ini: ses[0].ini, fin: ses[ses.length - 1].fin, dia: true }, ...all.filter((s) => s.patio)];
+  }
+  // Quién cubre cada franja real (para detectar solapes entre ausencias)
+  function coverage(a, date = state.date) {
+    const out = {};
+    for (const s of absSlots(a, date)) {
+      const id = a.dia && !s.patio ? (a.s || {})[DAY_KEY] : (a.s || {})[s.k];
+      if (id && id !== NONE) out[s.k] = id;
+    }
+    return out;
+  }
+  // Franjas reales que representa una fila (la de «Todo el día» representa varias)
+  const rowKeys = (a, k) => (k === DAY_KEY ? absSessions(a).map((s) => s.k) : [k]);
+
   /* ================= tablero ================= */
   function renderBoard() {
     const date = state.date;
     const editing = Store.editing;
-    const slots = slotsFor(date);
     const map = staffMap();
     const day = dayOf(date);
     const board = $('#board');
@@ -188,7 +220,7 @@
     } else {
       // Quién está ocupado en cada hora (para avisar de solapes)
       const busy = {};
-      for (const a of day.ausencias) for (const [k, id] of Object.entries(a.s || {})) if (id && id !== NONE) (busy[k + '|' + id] = busy[k + '|' + id] || []).push(a.t);
+      for (const a of day.ausencias) for (const [k, id] of Object.entries(coverage(a, date))) (busy[k + '|' + id] = busy[k + '|' + id] || []).push(a.t);
       const absentIds = new Set(day.ausencias.map((a) => a.t));
 
       let html = '<div class="board-grid">';
@@ -198,9 +230,11 @@
           <div class="abs-name">${esc(shortName(p))}</div>
           <div class="abs-role">${esc(p ? p.cargo || '' : '')}</div>
           ${a.nota ? `<div class="abs-note">${esc(a.nota)}</div>` : ''}
-          ${editing ? `<div class="abs-actions"><button class="mini-btn" data-act="note">${ICON.edit}Nota</button><button class="mini-btn del" data-act="del">${ICON.trash}Quitar</button></div>` : ''}
+          ${editing ? `<div class="abs-actions"><button class="mini-btn" data-act="note">${ICON.edit}Nota</button><button class="mini-btn" data-act="hours">${ICON.clock}Horas</button><button class="mini-btn del" data-act="del">${ICON.trash}Quitar</button></div>` : ''}
         </div>`;
-        for (const s of slots) {
+        const rows = visibleSlots(a, date);
+        if (!rows.length) html += `<div class="slot-none-left">Sin horas seleccionadas${editing ? ' · pulsa «Horas» para elegirlas' : ''}</div>`;
+        for (const s of rows) {
           const sid = (a.s || {})[s.k];
           const sp = sid ? map[sid] : null;
           let inner;
@@ -211,7 +245,7 @@
               ${editing ? `<button class="sub-x" data-act="clear" aria-label="Quitar marca">${ICON.x}</button>` : ''}
             </div>`;
           } else if (sid) {
-            const clash = (busy[s.k + '|' + sid] || []).length > 1;
+            const clash = rowKeys(a, s.k).some((k) => (busy[k + '|' + sid] || []).length > 1);
             const isAbsent = absentIds.has(sid);
             const warn = clash ? 'Tiene otra sustitución a esta hora' : isAbsent ? 'También está ausente hoy' : '';
             inner = `<div class="sub${warn ? ' conflict' : ''}" title="${esc(fullName(sp))}${warn ? ' · ' + warn : ''}">
@@ -223,8 +257,12 @@
           } else {
             inner = `<div class="slot-empty">${editing ? (state.selected ? 'Toca para asignar' : '<span class="only-wide">Arrastra aquí o haz clic</span><span class="only-narrow">Toca para elegir</span>') : '–'}</div>`;
           }
-          html += `<div class="slot${s.patio ? ' patio' : ''}" data-slot="${esc(s.k)}" ${editing ? 'tabindex="0" role="button"' : ''} aria-label="${s.patio ? 'Patio' : 'Sesión'} ${esc(s.ini)} a ${esc(s.fin)}">
-            <div class="slot-time">${esc(s.ini)} – ${esc(s.fin)}<small>${s.patio ? 'Patio' : 'Sesión'}</small></div>${inner}</div>`;
+          const kind = s.dia ? 'Todo el día' : s.patio ? 'Patio' : 'Sesión';
+          const time = s.dia
+            ? `<div class="slot-time">Todo el día<small>${esc(s.ini)} – ${esc(s.fin)}</small></div>`
+            : `<div class="slot-time">${esc(s.ini)} – ${esc(s.fin)}<small>${kind}${editing ? ` <button class="slot-hide" data-act="hide" title="Quitar esta hora de la tarjeta">− quitar</button>` : ''}</small></div>`;
+          html += `<div class="slot${s.patio ? ' patio' : ''}${s.dia ? ' whole' : ''}" data-slot="${esc(s.k)}" ${editing ? 'tabindex="0" role="button"' : ''} aria-label="${kind} ${esc(s.ini)} a ${esc(s.fin)}">
+            ${time}${inner}</div>`;
         }
         html += '</div>';
       }
@@ -303,22 +341,28 @@
 
   /* ================= acciones sobre el día ================= */
   function findAbs(id) { return dayOf(state.date).ausencias.find((a) => a.id === id); }
+  // Otras ausencias de ese día que ya tienen a esa persona en alguna de esas franjas
+  function clashesWith(a, keys, teacherId) {
+    if (teacherId === NONE) return 0;
+    return dayOf(state.date).ausencias.filter((x) => x !== a && keys.some((k) => coverage(x)[k] === teacherId)).length;
+  }
   function assign(absId, slotKey, teacherId, { ask = true } = {}) {
     const a = findAbs(absId);
     if (!a) return;
     a.s = a.s || {};
-    // En la primera sesión del día, preguntar si la sustitución es para toda la jornada
-    const sessions = slotsFor(state.date).filter((s) => !s.patio);
-    if (ask && teacherId !== NONE && sessions.length > 1 && sessions[0].k === slotKey) {
+    // Solo en la primera sesión del día (9:00), preguntar si la sustitución es para toda la jornada
+    const sessions = a.dia ? [] : absSessions(a);
+    const firstOfDay = slotsFor(state.date).find((s) => !s.patio);
+    if (ask && teacherId !== NONE && sessions.length > 1 && firstOfDay && slotKey === firstOfDay.k && sessions[0].k === slotKey) {
       askWholeDay(a, teacherId, sessions);
       return;
     }
-    const others = teacherId === NONE ? [] : dayOf(state.date).ausencias.filter((x) => x !== a && (x.s || {})[slotKey] === teacherId);
+    const clash = clashesWith(a, rowKeys(a, slotKey), teacherId);
     a.s[slotKey] = teacherId;
     Store.markDirty('dias:' + state.date);
     const p = staffMap()[teacherId];
-    if (teacherId === NONE) toast('✕ Marcado: en esa hora no hace falta sustituir');
-    else if (others.length) toast(`⚠ ${shortName(p)} ya tiene otra sustitución a esa hora`, true);
+    if (teacherId === NONE) toast('✕ Marcado: no hace falta sustituir');
+    else if (clash) toast(`⚠ ${shortName(p)} ya tiene otra sustitución a esa hora`, true);
     else toast(`${shortName(p)} asignado/a`);
     state.selected = null;
     renderAll();
@@ -332,7 +376,7 @@
     const m = modal({
       title: '¿Sustitución para todo el día?',
       body: `<p style="margin-top:0;font-size:1.05rem"><b>${esc(sub)}</b> sustituye a <b>${esc(abs)}</b> a primera hora (${esc(first.ini)}–${esc(first.fin)}).</p>
-        <p style="margin-bottom:0">¿Se queda con su clase <b>toda la jornada</b> (${esc(first.ini)} a ${esc(last.fin)})? El patio no se incluye.</p>`,
+        <p style="margin-bottom:0">¿Se queda con su clase <b>toda la jornada</b> (${esc(first.ini)} a ${esc(last.fin)})? Aparecerá en una sola fila «Todo el día». El patio queda aparte.</p>`,
       foot: (f, close) => {
         f.innerHTML = `<button class="btn btn-outline">Solo de ${esc(first.ini)} a ${esc(first.fin)}</button><button class="btn btn-sun">Sí, todo el día</button>`;
         f.children[0].onclick = () => { close(); assign(a.id, first.k, teacherId, { ask: false }); };
@@ -343,19 +387,21 @@
   }
   function assignWholeDay(a, teacherId, sessions) {
     const map = staffMap();
-    const kept = [];
-    let clashes = 0;
-    for (const s of sessions) {
-      const cur = a.s[s.k];
-      if (cur && cur !== teacherId) { kept.push(`${s.ini} (${shortName(map[cur])})`); continue; }
-      a.s[s.k] = teacherId;
-      if (dayOf(state.date).ausencias.some((x) => x !== a && (x.s || {})[s.k] === teacherId)) clashes++;
+    const p = shortName(map[teacherId]);
+    // Si alguna otra hora ya tenía a otra persona, se respeta y se rellena hora a hora
+    const kept = sessions.filter((s) => a.s[s.k] && a.s[s.k] !== teacherId);
+    if (kept.length) {
+      for (const s of sessions) if (!a.s[s.k]) a.s[s.k] = teacherId;
+      toast(`${p} asignado/a en las horas libres. Se han respetado: ${kept.map((s) => `${s.ini} (${shortName(map[a.s[s.k]])})`).join(', ')}`);
+    } else {
+      for (const s of sessions) delete a.s[s.k];
+      a.dia = true;
+      a.s[DAY_KEY] = teacherId;
+      const clash = clashesWith(a, sessions.map((s) => s.k), teacherId);
+      if (clash) toast(`⚠ ${p} asignado/a todo el día, pero tiene horas que se solapan con otra sustitución`, true);
+      else toast(`${p} asignado/a para todo el día`);
     }
     Store.markDirty('dias:' + state.date);
-    const p = shortName(map[teacherId]);
-    if (clashes) toast(`⚠ ${p} asignado/a todo el día, pero tiene ${clashes} hora(s) que se solapan con otra sustitución`, true);
-    else if (kept.length) toast(`${p} asignado/a todo el día. Se han respetado las horas que ya tenían otra persona: ${kept.join(', ')}`);
-    else toast(`${p} asignado/a para todo el día`);
     state.selected = null;
     renderAll();
   }
@@ -365,6 +411,88 @@
     delete a.s[slotKey];
     Store.markDirty('dias:' + state.date);
     renderAll();
+  }
+  // Quitar una franja de la tarjeta (el maestro/a solo falta algunas horas)
+  function hideSlot(absId, slotKey) {
+    const a = findAbs(absId);
+    if (!a) return;
+    a.ocultas = [...new Set([...(a.ocultas || []), slotKey])];
+    if (a.s) delete a.s[slotKey];
+    Store.markDirty('dias:' + state.date);
+    const s = slotsFor(state.date).find((x) => x.k === slotKey);
+    toast(`Hora quitada${s ? ` (${s.ini}–${s.fin})` : ''}. Puedes recuperarla con «Horas».`);
+    renderAll();
+  }
+  // Pasar de una fila «Todo el día» a sesiones sueltas y al revés, conservando quién sustituye.
+  // Devuelve true si había varias personas distintas y no se ha podido conservar ninguna.
+  function setWholeDay(a, on) {
+    a.s = a.s || {};
+    const ses = absSessions(a);
+    if (on && !a.dia) {
+      const ids = [...new Set(ses.map((s) => a.s[s.k]).filter(Boolean))];
+      for (const s of ses) delete a.s[s.k];
+      if (ids.length === 1) a.s[DAY_KEY] = ids[0];
+      a.dia = true;
+      return ids.length > 1;
+    }
+    if (!on && a.dia) {
+      const id = a.s[DAY_KEY];
+      delete a.s[DAY_KEY];
+      if (id) for (const s of ses) a.s[s.k] = id;
+      delete a.dia;
+    }
+    return false;
+  }
+  function editHours(absId) {
+    const a = findAbs(absId);
+    const p = staffMap()[a.t];
+    const hidden = new Set(a.ocultas || []);
+    const all = slotsFor(state.date);
+    let whole = !!a.dia;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="lbl" style="margin-bottom:6px">¿Cómo se muestra?</div>
+      <div class="mode-pick">
+        <button type="button" class="mode-btn" data-mode="0"><b>Por sesiones</b><small>Una fila por hora</small></button>
+        <button type="button" class="mode-btn" data-mode="1"><b>Todo el día</b><small>Una sola fila con un sustituto</small></button>
+      </div>
+      <div class="lbl" style="margin:16px 0 6px">¿En qué horas falta?</div>
+      <div class="hours-list">${all.map((s) => `<label class="hour-row${s.patio ? ' patio' : ''}"><input type="checkbox" value="${esc(s.k)}"${hidden.has(s.k) ? '' : ' checked'}><span>${esc(s.ini)} – ${esc(s.fin)}</span><small>${s.patio ? 'Patio' : 'Sesión'}</small></label>`).join('')}</div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="btn-link" data-all="1">Marcar todas</button><button type="button" class="btn-link" data-all="0">Desmarcar todas</button></div>
+      <p class="err" id="hrsErr"></p>`;
+    const paint = () => $$('.mode-btn', wrap).forEach((b) => b.classList.toggle('on', (b.dataset.mode === '1') === whole));
+    paint();
+    wrap.addEventListener('click', (e) => {
+      const mb = e.target.closest('.mode-btn');
+      if (mb) { whole = mb.dataset.mode === '1'; paint(); }
+      const al = e.target.closest('[data-all]');
+      if (al) $$('.hour-row input', wrap).forEach((i) => { i.checked = al.dataset.all === '1'; });
+    });
+    modal({
+      title: `Horas de ${shortName(p)}`,
+      body: wrap,
+      foot: (f, close) => {
+        f.innerHTML = '<button class="btn btn-outline">Cancelar</button><button class="btn btn-primary">Guardar</button>';
+        f.children[0].onclick = close;
+        f.children[1].onclick = () => {
+          const keep = new Set($$('.hour-row input:checked', wrap).map((i) => i.value));
+          if (!keep.size) { $('#hrsErr').textContent = 'Marca al menos una hora.'; return; }
+          // Primero volver a sesiones sueltas para no perder a quien sustituye
+          const wasWhole = !!a.dia;
+          setWholeDay(a, false);
+          a.ocultas = all.filter((s) => !keep.has(s.k)).map((s) => s.k);
+          for (const k of a.ocultas) if (a.s) delete a.s[k];
+          if (!a.ocultas.length) delete a.ocultas;
+          const mixed = whole ? setWholeDay(a, true) : false;
+          Store.markDirty('dias:' + state.date);
+          close();
+          renderAll();
+          if (mixed) toast('Había varias personas en esas horas: elige quién sustituye todo el día.', true);
+          else if (whole && !wasWhole) toast('Ahora se muestra en una sola fila «Todo el día»');
+          else toast('Horas actualizadas');
+        };
+      },
+    });
   }
 
   function pickTeacher({ title, list, onPick, guardFirst = true, withNone = false }) {
@@ -537,15 +665,17 @@
         if (a === 'clear') clearSlot(absId, slot.dataset.slot);
         if (a === 'note') editNote(absId);
         if (a === 'del') removeAbsence(absId);
+        if (a === 'hours') editHours(absId);
+        if (a === 'hide') hideSlot(absId, slot.dataset.slot);
         return;
       }
       if (!slot) return;
       if (state.selected) { assign(absId, slot.dataset.slot, state.selected); return; }
       const a = findAbs(absId);
       const p = staffMap()[a.t];
-      const s = slotsFor(state.date).find((x) => x.k === slot.dataset.slot);
+      const s = visibleSlots(a).find((x) => x.k === slot.dataset.slot);
       pickTeacher({
-        title: `Sustituye a ${shortName(p)} · ${s.ini}–${s.fin}`,
+        title: s.dia ? `Sustituye a ${shortName(p)} · todo el día` : `Sustituye a ${shortName(p)} · ${s.ini}–${s.fin}`,
         list: substituteCandidates(state.date),
         withNone: true,
         onPick: (id) => assign(absId, slot.dataset.slot, id),
@@ -593,7 +723,6 @@
   /* ================= compartir / imprimir ================= */
   function summaryText() {
     const map = staffMap();
-    const slots = slotsFor(state.date);
     const g = guardOf(state.date);
     let t = `📋 SUSTITUCIONES · ${longDate(state.date).toUpperCase()}\n`;
     if (g) t += `🛡️ Guardia: grupo ${g.num} (${g.members.map((id) => shortName(map[id])).join(', ')})\n`;
@@ -602,9 +731,9 @@
     for (const a of day.ausencias) {
       const p = map[a.t];
       t += `\n❌ ${shortName(p)}${p && p.cargo ? ' (' + p.cargo + ')' : ''}${a.nota ? ' – ' + a.nota : ''}\n`;
-      for (const s of slots) {
+      for (const s of visibleSlots(a)) {
         const sid = (a.s || {})[s.k];
-        t += `   ${s.ini}-${s.fin}${s.patio ? ' patio' : ''}: ${sid === NONE ? 'no hace falta' : sid ? shortName(map[sid]) : '—'}\n`;
+        t += `   ${s.dia ? 'Todo el día ' : ''}${s.ini}-${s.fin}${s.patio ? ' patio' : ''}:${sid === NONE ? 'no hace falta' : sid ? shortName(map[sid]) : '—'}\n`;
       }
     }
     return t;
