@@ -11,6 +11,7 @@ const Store = (() => {
   const LS_DATA = 'sustituciones.datos';
   const LS_SESSION = 'sustituciones.sesion';
   const LS_PENDING = 'sustituciones.pendientes';
+  const LS_LIMIT = 'sustituciones.limiteApi';
   const ITER = 250000;
 
   let config = {};
@@ -20,6 +21,8 @@ const Store = (() => {
   let password = null;
   let dirty = new Set();
   let saving = false;
+  let source = null;     // de dónde salieron los datos: 'api' | 'pages' | 'local'
+  let published = null;  // fecha de la última publicación conocida
   let listeners = [];
 
   const enc = new TextEncoder();
@@ -90,8 +93,23 @@ const Store = (() => {
     if (tok) h.Authorization = 'Bearer ' + tok;
     return h;
   }
+  // Sin token, GitHub solo permite 60 consultas por hora y por conexión (en el
+  // colegio todos los móviles comparten la misma). Si se agotan, no se vuelve a
+  // intentar hasta que GitHub renueve el cupo y se usa la copia publicada.
+  function apiBlocked() {
+    try { return Date.now() < Number(localStorage.getItem(LS_LIMIT) || 0); } catch { return false; }
+  }
+  function noteRateLimit(res) {
+    const left = res.headers.get('x-ratelimit-remaining');
+    if (res.status === 403 || res.status === 429 || (left !== null && Number(left) <= 1)) {
+      const reset = Number(res.headers.get('x-ratelimit-reset')) * 1000 || Date.now() + 15 * 60000;
+      try { localStorage.setItem(LS_LIMIT, String(reset)); } catch { /* nada */ }
+    }
+  }
   async function ghGet(path, tok) {
+    if (!tok && apiBlocked()) throw new Error('Límite de consultas de GitHub');
     const res = await fetch(apiUrl(path) + '&_=' + Date.now(), { headers: headers(tok), cache: 'no-store' });
+    if (!tok) noteRateLimit(res);
     if (!res.ok) throw new Error('GitHub ' + res.status);
     const j = await res.json();
     return { sha: j.sha, text: b64ToUtf8(j.content) };
@@ -113,46 +131,50 @@ const Store = (() => {
   }
 
   /* ---------- carga ---------- */
-  async function loadConfig() {
+  async function fetchPublished(path) {
     try {
-      const res = await fetch(CONFIG_PATH + '?_=' + Date.now(), { cache: 'no-store' });
-      config = res.ok ? await res.json() : {};
-    } catch { config = {}; }
-    // La versión del repositorio manda (por si se acaba de cambiar la clave)
-    if (repoInfo()) {
-      try { config = JSON.parse((await ghGet(CONFIG_PATH)).text); } catch { /* usar la publicada */ }
-    }
+      const res = await fetch(path + '?_=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) return await res.json();
+    } catch { /* sin conexión */ }
+    return null;
   }
 
-  async function loadData() {
-    let loaded = null;
-    if (repoInfo()) {
+  async function loadConfig() {
+    config = (await fetchPublished(CONFIG_PATH)) || {};
+  }
+  // Al entrar en edición se lee la configuración directamente del repositorio
+  // (por si se acaba de cambiar la contraseña o el token)
+  async function refreshConfig() {
+    if (!repoInfo()) return;
+    try { config = JSON.parse((await ghGet(CONFIG_PATH)).text); } catch { /* usar la publicada */ }
+  }
+
+  // fresh: consultar también la API de GitHub (al instante). Sin fresh solo se mira
+  // la copia publicada en GitHub Pages, que tarda 1-2 minutos en ponerse al día.
+  async function loadData({ fresh = true } = {}) {
+    const fromApi = async () => {
+      if (!repoInfo() || (!fresh && !token)) return null;
       try {
         const r = await ghGet(DATA_PATH, token);
-        loaded = JSON.parse(r.text);
-        sha = r.sha;
-      } catch { /* límite de la API o sin conexión: probar la copia publicada */ }
-    }
-    if (!loaded) {
-      try {
-        const res = await fetch(DATA_PATH + '?_=' + Date.now(), { cache: 'no-store' });
-        if (res.ok) loaded = await res.json();
-      } catch { /* sin conexión */ }
-    }
+        return { d: JSON.parse(r.text), sha: r.sha };
+      } catch { return null; }
+    };
+    const [api, pages] = await Promise.all([fromApi(), fetchPublished(DATA_PATH)]);
+    let loaded = null;
+    source = null;
+    if (api) { loaded = api.d; sha = api.sha; source = 'api'; }
+    // Quedarse con la versión más reciente de las dos
+    if (pages && (!loaded || (pages.actualizado || '') > (loaded.actualizado || ''))) { loaded = pages; source = 'pages'; }
+    published = loaded ? loaded.actualizado || null : published;
     let local = null;
     try { local = JSON.parse(localStorage.getItem(LS_DATA)); } catch { /* nada */ }
-    if (!loaded) loaded = local;
+    if (!loaded) { loaded = local; source = 'local'; }
     // Borrador sin publicar de este dispositivo: se conserva encima de lo publicado
     const pending = loadPending();
     dirty = new Set(pending);
     if (pending.length && local && loaded && loaded !== local) loaded = mergeKeys(loaded, local, pending);
     // En local (sin GitHub) se conservan los cambios hechos en este navegador
-    if (!repoInfo()) {
-      try {
-        const local = JSON.parse(localStorage.getItem(LS_DATA));
-        if (local && (!loaded || (local.actualizado || '') > (loaded.actualizado || ''))) loaded = local;
-      } catch { /* nada */ }
-    }
+    if (!repoInfo() && local && (!loaded || (local.actualizado || '') > (loaded.actualizado || ''))) loaded = local;
     data = normalize(loaded || {});
     cacheLocal();
     return data;
@@ -231,6 +253,8 @@ const Store = (() => {
           keys.forEach((k) => dirty.delete(k));
           persistPending();
           cacheLocal();
+          published = data.actualizado;
+          source = 'api';
           emit('saved');
           return true;
         } catch (e) {
@@ -250,7 +274,14 @@ const Store = (() => {
 
   /* ---------- sesión de edición ---------- */
   async function login(pw) {
-    if (!(await checkPassword(pw))) return false;
+    // Si la clave no coincide con la copia publicada, comprobar la del repositorio
+    // por si se acaba de cambiar la contraseña o conectar el token
+    if (!(await checkPassword(pw))) {
+      await refreshConfig();
+      if (!(await checkPassword(pw))) return false;
+    } else if (!config.token) {
+      await refreshConfig();
+    }
     password = pw;
     try { token = await decryptToken(pw); } catch { token = null; }
     try { sessionStorage.setItem(LS_SESSION, pw); } catch { /* nada */ }
@@ -258,8 +289,11 @@ const Store = (() => {
       // Releer con la clave para obtener la versión más reciente
       try {
         const r = await ghGet(DATA_PATH, token);
-        data = mergeKeys(JSON.parse(r.text), data, [...dirty]);
+        const remote = JSON.parse(r.text);
+        data = mergeKeys(remote, data, [...dirty]);
         sha = r.sha;
+        published = remote.actualizado || published;
+        source = 'api';
         cacheLocal();
       } catch { /* seguir con lo cargado */ }
     }
@@ -327,6 +361,9 @@ const Store = (() => {
     get pending() { return dirty.size > 0 || saving; },
     get pendingCount() { return dirty.size; },
     get publishing() { return saving; },
+    get publishedAt() { return published; },
+    get source() { return source; },
+    get apiLimited() { return !token && apiBlocked(); },
     canSync, repoInfo, markDirty, publish, login, logout, restoreSession, connectGitHub, changePassword,
     makeVerifier,
     on(fn) { listeners.push(fn); },

@@ -401,3 +401,5 @@ body:has(.publish-bar:not([hidden])) .foot { padding-bottom: 110px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 820px) { #btnRefresh span { display: inline; } }
 body:has(.publish-bar:not([hidden])) .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+.last-pub { margin: 2px 0 0; font-size: .8rem; color: var(--muted); font-weight: 600; }
+@media print { .last-pub { display: none; } }

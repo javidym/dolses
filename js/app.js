@@ -282,20 +282,63 @@
     renderBoard();
     renderPalette();
     renderTopbar();
+    renderPublished();
   }
 
   /* ================= acciones sobre el día ================= */
   function findAbs(id) { return dayOf(state.date).ausencias.find((a) => a.id === id); }
-  function assign(absId, slotKey, teacherId) {
+  function assign(absId, slotKey, teacherId, { ask = true } = {}) {
     const a = findAbs(absId);
     if (!a) return;
     a.s = a.s || {};
+    // En la primera sesión del día, preguntar si la sustitución es para toda la jornada
+    const sessions = slotsFor(state.date).filter((s) => !s.patio);
+    if (ask && sessions.length > 1 && sessions[0].k === slotKey) {
+      askWholeDay(a, teacherId, sessions);
+      return;
+    }
     const others = dayOf(state.date).ausencias.filter((x) => x !== a && (x.s || {})[slotKey] === teacherId);
     a.s[slotKey] = teacherId;
     Store.markDirty('dias:' + state.date);
     const p = staffMap()[teacherId];
     if (others.length) toast(`⚠ ${shortName(p)} ya tiene otra sustitución a esa hora`, true);
     else toast(`${shortName(p)} asignado/a`);
+    state.selected = null;
+    renderAll();
+  }
+  function askWholeDay(a, teacherId, sessions) {
+    const map = staffMap();
+    const sub = shortName(map[teacherId]);
+    const abs = shortName(map[a.t]);
+    const first = sessions[0];
+    const last = sessions[sessions.length - 1];
+    const m = modal({
+      title: '¿Sustitución para todo el día?',
+      body: `<p style="margin-top:0;font-size:1.05rem"><b>${esc(sub)}</b> sustituye a <b>${esc(abs)}</b> a primera hora (${esc(first.ini)}–${esc(first.fin)}).</p>
+        <p style="margin-bottom:0">¿Se queda con su clase <b>toda la jornada</b> (${esc(first.ini)} a ${esc(last.fin)})? El patio no se incluye.</p>`,
+      foot: (f, close) => {
+        f.innerHTML = `<button class="btn btn-outline">Solo de ${esc(first.ini)} a ${esc(first.fin)}</button><button class="btn btn-sun">Sí, todo el día</button>`;
+        f.children[0].onclick = () => { close(); assign(a.id, first.k, teacherId, { ask: false }); };
+        f.children[1].onclick = () => { close(); assignWholeDay(a, teacherId, sessions); };
+      },
+    });
+    $('.btn-sun', m.el).focus();
+  }
+  function assignWholeDay(a, teacherId, sessions) {
+    const map = staffMap();
+    const kept = [];
+    let clashes = 0;
+    for (const s of sessions) {
+      const cur = a.s[s.k];
+      if (cur && cur !== teacherId) { kept.push(`${s.ini} (${shortName(map[cur])})`); continue; }
+      a.s[s.k] = teacherId;
+      if (dayOf(state.date).ausencias.some((x) => x !== a && (x.s || {})[s.k] === teacherId)) clashes++;
+    }
+    Store.markDirty('dias:' + state.date);
+    const p = shortName(map[teacherId]);
+    if (clashes) toast(`⚠ ${p} asignado/a todo el día, pero tiene ${clashes} hora(s) que se solapan con otra sustitución`, true);
+    else if (kept.length) toast(`${p} asignado/a todo el día. Se han respetado las horas que ya tenían otra persona: ${kept.join(', ')}`);
+    else toast(`${p} asignado/a para todo el día`);
     state.selected = null;
     renderAll();
   }
@@ -1059,22 +1102,59 @@
     };
   }
 
+  // Hora de la última publicación, en texto ("hoy a las 11:57", "ayer a las 9:10"…)
+  function publishedText() {
+    const iso = Store.publishedAt;
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    const hm = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    const today = toISO(new Date());
+    const yest = toISO(new Date(Date.now() - 86400000));
+    const day = toISO(d) === today ? 'hoy' : toISO(d) === yest ? 'ayer' : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    return `${day} a las ${hm}`;
+  }
+  function renderPublished() {
+    const el = $('#lastPub');
+    const t = publishedText();
+    el.hidden = !t;
+    el.textContent = t ? `Última publicación: ${t}` : '';
+  }
+
   // Vuelve a descargar lo último publicado (el borrador sin publicar se conserva)
+  let lastLoad = Date.now();
   async function refreshDay() {
     const btn = $('#btnRefresh');
     if (btn.disabled) return;
     btn.disabled = true;
     btn.classList.add('spinning');
     try {
-      await Store.reload();
+      await Store.reload({ fresh: true });
+      lastLoad = Date.now();
       renderAll();
-      toast(Store.pendingCount ? 'Actualizado (tus cambios sin publicar se mantienen)' : '✓ Actualizado con lo último publicado');
+      const when = publishedText();
+      let msg = Store.pendingCount ? 'Actualizado (tus cambios sin publicar se mantienen)' : '✓ Actualizado';
+      if (when) msg += ` · última publicación ${when}`;
+      if (Store.source !== 'api') msg += '. Si se acaba de publicar algo, puede tardar 1-2 minutos en llegar.';
+      toast(msg);
     } catch {
       toast('No se pudo actualizar. Comprueba la conexión.', true);
     } finally {
       btn.disabled = false;
       btn.classList.remove('spinning');
     }
+  }
+
+  // Comprobación automática cada minuto mientras la app está abierta (solo consulta)
+  async function autoCheck(fresh) {
+    if (document.visibilityState !== 'visible' || Store.editing || $('#modalRoot').children.length) return;
+    const before = Store.publishedAt;
+    try { await Store.reload({ fresh }); } catch { return; }
+    lastLoad = Date.now();
+    if (Store.publishedAt !== before) {
+      renderAll();
+      if (before) toast('Hay cambios nuevos en las sustituciones');
+    } else renderPublished();
   }
 
   /* ================= inicio ================= */
@@ -1091,14 +1171,12 @@
       renderSync();
     });
     window.addEventListener('beforeunload', (e) => { if (Store.editing && Store.pendingCount) { e.preventDefault(); e.returnValue = ''; } });
-    // Al volver a la app, recargar datos para ver los últimos cambios
-    let lastLoad = Date.now();
-    document.addEventListener('visibilitychange', async () => {
-      if (document.visibilityState !== 'visible' || Store.editing || Date.now() - lastLoad < 60000) return;
-      lastLoad = Date.now();
-      await Store.reload();
-      renderAll();
+    // Al volver a la app, y cada minuto mientras está abierta, mirar si hay cambios.
+    // La comprobación periódica usa la copia publicada para no gastar el cupo de GitHub.
+    document.addEventListener('visibilitychange', () => {
+      if (Date.now() - lastLoad > 30000) autoCheck(true);
     });
+    setInterval(() => autoCheck(false), 60000);
   }
 
   async function start() {
