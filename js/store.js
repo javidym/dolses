@@ -10,6 +10,7 @@ const Store = (() => {
   const CONFIG_PATH = 'data/config.json';
   const LS_DATA = 'sustituciones.datos';
   const LS_SESSION = 'sustituciones.sesion';
+  const LS_PENDING = 'sustituciones.pendientes';
   const ITER = 250000;
 
   let config = {};
@@ -18,7 +19,6 @@ const Store = (() => {
   let token = null;
   let password = null;
   let dirty = new Set();
-  let saveTimer = null;
   let saving = false;
   let listeners = [];
 
@@ -139,9 +139,13 @@ const Store = (() => {
         if (res.ok) loaded = await res.json();
       } catch { /* sin conexión */ }
     }
-    if (!loaded) {
-      try { loaded = JSON.parse(localStorage.getItem(LS_DATA)); } catch { /* nada */ }
-    }
+    let local = null;
+    try { local = JSON.parse(localStorage.getItem(LS_DATA)); } catch { /* nada */ }
+    if (!loaded) loaded = local;
+    // Borrador sin publicar de este dispositivo: se conserva encima de lo publicado
+    const pending = loadPending();
+    dirty = new Set(pending);
+    if (pending.length && local && loaded && loaded !== local) loaded = mergeKeys(loaded, local, pending);
     // En local (sin GitHub) se conservan los cambios hechos en este navegador
     if (!repoInfo()) {
       try {
@@ -170,66 +174,75 @@ const Store = (() => {
     try { localStorage.setItem(LS_DATA, JSON.stringify(data)); } catch { /* sin almacenamiento */ }
   }
 
-  /* ---------- guardado ---------- */
+  /* ---------- borrador y publicación ----------
+   * Los cambios se guardan como borrador en este dispositivo y solo llegan
+   * a todos cuando se pulsa «Publicar para todos». */
   // key: 'personal' | 'grupos' | 'ajustes' | 'calendario:YYYY-MM-DD' | 'dias:YYYY-MM-DD'
+  function persistPending() {
+    try { localStorage.setItem(LS_PENDING, JSON.stringify([...dirty])); } catch { /* sin almacenamiento */ }
+  }
+  function loadPending() {
+    try { return JSON.parse(localStorage.getItem(LS_PENDING)) || []; } catch { return []; }
+  }
+
   function markDirty(key) {
     dirty.add(key);
     data.actualizado = new Date().toISOString();
+    persistPending();
     cacheLocal();
     emit('dirty');
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(save, 1200);
   }
 
-  function applyDirty(remote, keys) {
+  // Parte de la versión remota y le aplica las partes cambiadas en local
+  function mergeKeys(remote, local, keys) {
     const merged = normalize(remote);
     for (const k of keys) {
       const [part, sub] = k.split(':');
       if (sub) {
-        if (data[part][sub] === undefined) delete merged[part][sub];
-        else merged[part][sub] = data[part][sub];
-      } else {
-        merged[part] = data[part];
+        if (!local[part] || local[part][sub] === undefined) delete merged[part][sub];
+        else merged[part][sub] = local[part][sub];
+      } else if (local[part] !== undefined) {
+        merged[part] = local[part];
       }
     }
-    merged.actualizado = data.actualizado;
+    if (local.curso) merged.curso = local.curso;
+    merged.actualizado = local.actualizado;
     return merged;
   }
 
-  async function save() {
-    if (!dirty.size) return;
-    if (!canSync()) { dirty.clear(); emit('saved', { local: true }); return; }
-    if (saving) { clearTimeout(saveTimer); saveTimer = setTimeout(save, 800); return; }
+  function err(code, message) { const e = new Error(message); e.code = code; return e; }
+
+  async function publish() {
+    if (!dirty.size) return false;
+    if (!repoInfo()) throw err('LOCAL', 'La aplicación no está publicada en GitHub Pages.');
+    if (!token) throw err('NO_TOKEN', 'Falta conectar la aplicación con GitHub.');
+    if (saving) throw err('BUSY', 'Ya se está publicando…');
     saving = true;
     const keys = [...dirty];
-    dirty.clear();
     emit('saving');
     try {
       for (let attempt = 0; attempt < 3; attempt++) {
+        // Partir siempre de lo último publicado para no pisar cambios de otros dispositivos
+        const r = await ghGet(DATA_PATH, token);
+        sha = r.sha;
+        data = mergeKeys(JSON.parse(r.text), data, keys);
         try {
-          const text = JSON.stringify(data, null, 1);
-          sha = await ghPut(DATA_PATH, text, sha, 'Sustituciones: actualización ' + new Date().toLocaleString('es-ES'), token);
-          emit('saved', {});
-          return;
+          sha = await ghPut(DATA_PATH, JSON.stringify(data, null, 1), sha, 'Sustituciones publicadas ' + new Date().toLocaleString('es-ES'), token);
+          keys.forEach((k) => dirty.delete(k));
+          persistPending();
+          cacheLocal();
+          emit('saved');
+          return true;
         } catch (e) {
-          if (e.status === 409 || e.status === 422) {
-            // Otro dispositivo guardó antes: mezclar y reintentar
-            const r = await ghGet(DATA_PATH, token);
-            sha = r.sha;
-            data = applyDirty(JSON.parse(r.text), keys);
-            cacheLocal();
-            emit('merged');
-            continue;
-          }
+          if (e.status === 409 || e.status === 422) continue;
+          if (e.status === 401 || e.status === 403) throw err('AUTH', 'GitHub ha rechazado la clave (puede haber caducado). Vuelve a conectarla en Ajustes › Acceso y datos.');
           throw e;
         }
       }
-      throw new Error('No se pudo guardar tras varios intentos');
+      throw err('RETRY', 'No se pudo publicar tras varios intentos.');
     } catch (e) {
-      keys.forEach((k) => dirty.add(k));
       emit('error', e);
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(save, 15000);
+      throw e.code ? e : err('NET', 'No se pudo conectar con GitHub. Comprueba la conexión a internet.');
     } finally {
       saving = false;
     }
@@ -245,7 +258,7 @@ const Store = (() => {
       // Releer con la clave para obtener la versión más reciente
       try {
         const r = await ghGet(DATA_PATH, token);
-        data = normalize(JSON.parse(r.text));
+        data = mergeKeys(JSON.parse(r.text), data, [...dirty]);
         sha = r.sha;
         cacheLocal();
       } catch { /* seguir con lo cargado */ }
@@ -286,10 +299,10 @@ const Store = (() => {
     token = tok;
     const d = await ghGet(DATA_PATH, tok);
     sha = d.sha;
-    // Si en este dispositivo hay cambios más recientes que en GitHub, se suben ahora
-    const remote = JSON.parse(d.text);
-    if ((data.actualizado || '') > (remote.actualizado || '')) markDirty('personal');
-    else { data = normalize(remote); cacheLocal(); emit('merged'); }
+    // Partir de lo publicado conservando el borrador de este dispositivo
+    data = mergeKeys(JSON.parse(d.text), data, [...dirty]);
+    cacheLocal();
+    emit('merged');
   }
 
   async function changePassword(newPw) {
@@ -309,7 +322,9 @@ const Store = (() => {
     get config() { return config; },
     get editing() { return !!password; },
     get pending() { return dirty.size > 0 || saving; },
-    canSync, repoInfo, markDirty, save, login, logout, restoreSession, connectGitHub, changePassword,
+    get pendingCount() { return dirty.size; },
+    get publishing() { return saving; },
+    canSync, repoInfo, markDirty, publish, login, logout, restoreSession, connectGitHub, changePassword,
     makeVerifier,
     on(fn) { listeners.push(fn); },
   };

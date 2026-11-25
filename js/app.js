@@ -569,17 +569,58 @@
     $('#btnSettings').hidden = !editing;
     renderSync();
   }
-  let syncState = 'ok';
   function renderSync() {
     const el = $('#syncStatus');
-    if (!Store.editing) { el.hidden = true; return; }
+    const bar = $('#publishBar');
+    const btn = $('#btnPublish');
+    const editing = Store.editing;
+    const n = Store.pendingCount;
+    btn.hidden = !editing;
+    if (!editing) { el.hidden = true; bar.hidden = true; return; }
     el.hidden = false;
     el.className = 'sync';
-    if (!Store.canSync()) { el.classList.add('local'); el.textContent = 'Solo en este dispositivo'; el.title = 'Conecta GitHub en Ajustes › Acceso para que todos vean los cambios'; return; }
-    el.title = '';
-    if (syncState === 'saving' || Store.pending) { el.classList.add('saving'); el.textContent = 'Guardando…'; }
-    else if (syncState === 'error') { el.classList.add('error'); el.textContent = 'Sin guardar · reintentando'; }
-    else el.textContent = 'Guardado';
+    btn.disabled = Store.publishing;
+    if (Store.publishing) {
+      el.classList.add('saving'); el.textContent = 'Publicando…';
+    } else if (n) {
+      el.classList.add('local'); el.textContent = n === 1 ? '1 cambio sin publicar' : `${n} cambios sin publicar`;
+    } else {
+      el.textContent = 'Todo publicado';
+    }
+    btn.classList.toggle('pulse', !!n && !Store.publishing);
+    bar.hidden = !n && !Store.publishing;
+    $('#publishBarText').innerHTML = Store.publishing
+      ? 'Publicando los cambios…'
+      : '<b>Cambios sin publicar.</b> Solo los ves tú hasta que pulses «Publicar».';
+    $('#publishBarBtn').disabled = Store.publishing;
+  }
+
+  async function doPublish() {
+    if (!Store.pendingCount) { toast('No hay cambios pendientes: todo está publicado.'); return true; }
+    renderSync();
+    try {
+      await Store.publish();
+      renderAll();
+      toast('✓ Publicado. Ya lo ven todos los dispositivos.');
+      return true;
+    } catch (e) {
+      renderSync();
+      if (e.code === 'NO_TOKEN' || e.code === 'AUTH') {
+        modal({
+          title: 'Falta conectar con GitHub',
+          body: `<p style="margin-top:0">${e.code === 'AUTH' ? esc(e.message) : 'Para que los cambios lleguen a todos los dispositivos, la aplicación necesita conectarse <b>una sola vez</b> con GitHub.'}</p>
+            <p>Tus cambios no se pierden: quedan guardados en este dispositivo hasta que se publiquen.</p>`,
+          foot: (f, close) => {
+            f.innerHTML = '<button class="btn btn-outline">Ahora no</button><button class="btn btn-primary">Conectar ahora</button>';
+            f.children[0].onclick = close;
+            f.children[1].onclick = () => { close(); openSettings('acceso'); };
+          },
+        });
+      } else {
+        toast(e.message || 'No se pudo publicar', true);
+      }
+      return false;
+    }
   }
   function askPassword() {
     const m = modal({
@@ -606,13 +647,23 @@
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('.btn-primary', m.el).click(); });
   }
   function toggleEdit() {
-    if (Store.editing) {
-      if (Store.pending) { toast('Espera un momento, se están guardando los cambios…'); Store.save(); return; }
+    if (!Store.editing) { askPassword(); return; }
+    const leave = () => {
       Store.logout();
       state.selected = null;
       renderAll();
       toast('Has salido del modo edición');
-    } else askPassword();
+    };
+    if (!Store.pendingCount) { leave(); return; }
+    modal({
+      title: 'Hay cambios sin publicar',
+      body: '<p style="margin:0">Si no los publicas, el resto del claustro no los verá. Se quedarán guardados en este dispositivo para publicarlos más tarde.</p>',
+      foot: (f, close) => {
+        f.innerHTML = '<button class="btn btn-outline">Salir sin publicar</button><button class="btn btn-sun">Publicar y salir</button>';
+        f.children[0].onclick = () => { close(); leave(); };
+        f.children[1].onclick = async () => { close(); if (await doPublish()) leave(); };
+      },
+    });
   }
 
   /* ================= instalación en el móvil ================= */
@@ -921,8 +972,8 @@
     el.innerHTML = `
       <div class="set-section"><h4>Guardar en GitHub</h4>
         ${synced
-          ? `<div class="status-box ok">✓ Conectado. Los cambios se guardan en GitHub y todo el claustro los ve al abrir la aplicación.</div>`
-          : `<div class="status-box warn">Ahora mismo los cambios solo se guardan en este dispositivo.</div>
+          ? `<div class="status-box ok">✓ Conectado. Al pulsar «Publicar» los cambios llegan a todos los dispositivos.</div>`
+          : `<div class="status-box warn">Todavía no está conectada: el botón «Publicar» no puede enviar los cambios al resto del claustro.</div>
             ${r ? `<p>Para que todo el claustro vea las sustituciones hay que conectar la aplicación con GitHub <b>una sola vez</b>:</p>
             <ol class="steps">
               <li>Entra en GitHub con la cuenta <b>${esc(r.owner)}</b> y abre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">crear token de acceso</a>.</li>
@@ -954,7 +1005,7 @@
       tokBtn.disabled = true; tokBtn.textContent = 'Conectando…';
       try {
         await Store.connectGitHub(tok);
-        toast('¡Conectado con GitHub!');
+        toast(Store.pendingCount ? '¡Conectado! Ya puedes pulsar «Publicar».' : '¡Conectado con GitHub!');
         setAccess(el);
         renderSync();
       } catch (err) {
@@ -988,7 +1039,7 @@
           ['personal', 'grupos', 'ajustes'].forEach((k) => Store.markDirty(k));
           Object.keys(D().calendario).forEach((k) => Store.markDirty('calendario:' + k));
           Object.keys(D().dias).forEach((k) => Store.markDirty('dias:' + k));
-          toast('Copia recuperada');
+          toast('Copia recuperada. Pulsa «Publicar» para enviarla a todos.');
           setAccess(el);
         });
       });
@@ -1003,7 +1054,7 @@
         D().personal = D().personal.filter((p) => !p.baja);
         if (curso) D().curso = curso;
         Store.markDirty('personal');
-        toast('Nuevo curso preparado');
+        toast('Nuevo curso preparado. Pulsa «Publicar» para aplicarlo.');
       });
     };
   }
@@ -1014,14 +1065,13 @@
     $('#btnSettings').onclick = () => openSettings();
     $('#btnPrint').onclick = () => print();
     $('#btnShare').onclick = share;
+    $('#btnPublish').onclick = doPublish;
+    $('#publishBarBtn').onclick = doPublish;
     Store.on((type) => {
-      if (type === 'saving') syncState = 'saving';
-      if (type === 'saved') syncState = 'ok';
-      if (type === 'error') { syncState = 'error'; toast('No se pudo guardar. Se reintentará en unos segundos.', true); }
       if (type === 'merged') { if (!$('#modalRoot').children.length) renderAll(); }
       renderSync();
     });
-    window.addEventListener('beforeunload', (e) => { if (Store.editing && Store.pending) { e.preventDefault(); e.returnValue = ''; } });
+    window.addEventListener('beforeunload', (e) => { if (Store.editing && Store.pendingCount) { e.preventDefault(); e.returnValue = ''; } });
     // Al volver a la app, recargar datos para ver los últimos cambios
     let lastLoad = Date.now();
     document.addEventListener('visibilitychange', async () => {
