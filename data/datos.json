@@ -1,7 +1,7 @@
 {
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-25T10:57:06.477Z",
+ "actualizado": "2026-11-25T11:32:04.287Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -401,7 +401,7 @@
    "nombre": "Rubén",
    "apellidos": "Muñoz López",
    "cargo": "Ed. Física apoyo · Secretario",
-   "cat": "especialista"
+   "cat": "direccion"
   },
   {
    "id": "t45",
@@ -542,7 +542,7 @@
    "id": "t64",
    "nombre": "Noelia",
    "apellidos": "Herreros Robles",
-   "cargo": "Jefa de estudios",
+   "cargo": "Jefa de estudios- PT",
    "cat": "direccion"
   },
   {
@@ -1051,35 +1051,6 @@
      "t": "t15",
      "s": {},
      "nota": "Nadie sustituye."
-    }
-   ]
-  },
-  "2026-11-27": {
-   "ausencias": [
-    {
-     "id": "8t7m0ld",
-     "t": "t06",
-     "s": {}
-    },
-    {
-     "id": "6esz26b",
-     "t": "t15",
-     "s": {}
-    },
-    {
-     "id": "4ssk2b4",
-     "t": "t11",
-     "s": {}
-    },
-    {
-     "id": "ilwydg3",
-     "t": "t26",
-     "s": {}
-    },
-    {
-     "id": "tx0odsw",
-     "t": "t05",
-     "s": {}
     }
    ]
   }
