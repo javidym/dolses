@@ -1,7 +1,7 @@
 {
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-25T18:00:52.087Z",
+ "actualizado": "2026-11-26T08:26:55.987Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -23,12 +23,6 @@
      "k": "3",
      "ini": "10:30",
      "fin": "11:15"
-    },
-    {
-     "k": "P",
-     "ini": "11:15",
-     "fin": "11:45",
-     "patio": true
     },
     {
      "k": "4",
