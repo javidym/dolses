@@ -174,6 +174,105 @@
     $('#dayNotice').innerHTML = notes.map(([c, t]) => `<div class="notice ${c}">${ICON.info}<span>${t}</span></div>`).join('');
   }
 
+  /* ================= acompañamientos UECO =================
+   * D().ueco = { alumnos: [{id, nombre, clase}],
+   *              semanas: [{ini, fin, a: {idAlumno: idMaestro}}] } */
+  const LS_UECO_FOLD = 'sustituciones.uecoPlegado';
+  function uecoData() {
+    const u = D().ueco || (D().ueco = {});
+    u.alumnos = u.alumnos || [];
+    u.semanas = u.semanas || [];
+    return u;
+  }
+  const uecoWeek = (date) => uecoData().semanas.find((w) => w.ini <= date && date <= w.fin) || null;
+  const shortDate = (iso) => { const d = fromISO(iso); return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`; };
+  function renderUeco() {
+    const el = $('#ueco');
+    const date = state.date;
+    const u = uecoData();
+    const w = uecoWeek(date);
+    if (!w || !u.alumnos.length || isWeekend(date) || calOf(date).festivo) { el.hidden = true; return; }
+    const map = staffMap();
+    const day = dayOf(date);
+    const absent = new Set(day.ausencias.map((a) => a.t));
+    let folded = false;
+    try { folded = localStorage.getItem(LS_UECO_FOLD) === '1'; } catch { /* nada */ }
+    const items = u.alumnos.map((al) => {
+      const p = map[(w.a || {})[al.id]];
+      const off = p && absent.has(p.id);
+      return `<div class="ueco-item${off ? ' off' : ''}${p ? '' : ' empty'}" title="${esc(al.nombre)} ${esc(al.clase || '')} → ${p ? esc(fullName(p)) + ' · ' + esc(p.cargo || '') : 'sin asignar'}${off ? ' · falta hoy' : ''}">
+        <span class="ueco-kid">${esc(al.nombre)}${al.clase ? ` <small>${esc(al.clase)}</small>` : ''}</span>
+        <span class="ueco-who"><b>${p ? esc(shortName(p)) : '—'}</b>${p ? `<small>${off ? '⚠ falta hoy' : esc(p.cargo || '')}</small>` : ''}</span>
+      </div>`;
+    }).join('');
+    el.hidden = false;
+    el.classList.toggle('folded', folded);
+    el.innerHTML = `<button class="ueco-head" aria-expanded="${!folded}">
+        <span class="ueco-title">Acompañamientos UECO</span>
+        <span class="ueco-week">Semana del ${esc(shortDate(w.ini))} al ${esc(shortDate(w.fin))}</span>
+        <span class="ueco-fold">${folded ? 'Mostrar' : 'Ocultar'}</span>
+      </button>
+      <div class="ueco-list">${items}</div>`;
+    $('.ueco-head', el).onclick = () => {
+      try { localStorage.setItem(LS_UECO_FOLD, folded ? '0' : '1'); } catch { /* nada */ }
+      renderUeco();
+      if (present.on && present.auto) fitScreen();
+    };
+  }
+
+  /* ================= modo pizarra (ajustar a la pantalla) ================= */
+  const LS_ZOOM = 'sustituciones.zoomPizarra';
+  const present = { on: false, auto: true, zoom: 1 };
+  function applyZoom() {
+    $('main.wrap').style.zoom = present.on ? String(present.zoom) : '';
+    $('#zoomVal').textContent = Math.round(present.zoom * 100) + '%';
+  }
+  // Buscar el tamaño más grande con el que todo cabe sin hacer scroll
+  function fitScreen() {
+    if (!present.on) return;
+    const doc = document.documentElement;
+    let z = 2;
+    for (; z > 0.3; z = Math.round((z - 0.05) * 100) / 100) {
+      present.zoom = z;
+      applyZoom();
+      if (doc.scrollHeight <= window.innerHeight + 1 && doc.scrollWidth <= window.innerWidth + 1) break;
+    }
+    present.auto = true;
+  }
+  function setPresent(on) {
+    present.on = on;
+    document.body.classList.toggle('present', on);
+    $('#presentBar').hidden = !on;
+    if (on) {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(LS_ZOOM)); } catch { /* nada */ }
+      if (saved && !saved.auto && saved.zoom) { present.auto = false; present.zoom = saved.zoom; applyZoom(); } else fitScreen();
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      applyZoom();
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    }
+  }
+  function zoomBy(d) {
+    present.auto = false;
+    present.zoom = Math.min(3, Math.max(0.3, Math.round((present.zoom + d) * 100) / 100));
+    applyZoom();
+    try { localStorage.setItem(LS_ZOOM, JSON.stringify({ auto: false, zoom: present.zoom })); } catch { /* nada */ }
+  }
+  function initPresent() {
+    $('#btnPresent').onclick = () => setPresent(true);
+    $('#presentExit').onclick = () => setPresent(false);
+    $('#zoomIn').onclick = () => zoomBy(0.1);
+    $('#zoomOut').onclick = () => zoomBy(-0.1);
+    $('#zoomFit').onclick = () => {
+      try { localStorage.removeItem(LS_ZOOM); } catch { /* nada */ }
+      fitScreen();
+    };
+    let t;
+    window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (present.on && present.auto) fitScreen(); }, 200); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && present.on && !document.fullscreenElement && !$('#modalRoot').children.length) setPresent(false); });
+  }
+
   /* ================= horas de cada ausencia =================
    * Cada ausencia puede tener:
    *  - a.ocultas: franjas quitadas a mano (solo falta unas horas)
@@ -333,10 +432,12 @@
 
   function renderAll() {
     renderDay();
+    renderUeco();
     renderBoard();
     renderPalette();
     renderTopbar();
     renderPublished();
+    if (present.on && present.auto) fitScreen();
   }
 
   /* ================= acciones sobre el día ================= */
@@ -887,7 +988,7 @@
   function openSettings(tab = 'personal') {
     const body = document.createElement('div');
     const m = modal({ title: 'Ajustes', body, wide: true, onClose: () => renderAll() });
-    const tabs = [['personal', 'Personal'], ['grupos', 'Grupos de guardia'], ['calendario', 'Calendario de guardias'], ['horarios', 'Horarios'], ['acceso', 'Acceso y datos']];
+    const tabs = [['personal', 'Personal'], ['grupos', 'Grupos de guardia'], ['calendario', 'Calendario de guardias'], ['horarios', 'Horarios'], ['ueco', 'Acompañamientos UECO'], ['acceso', 'Acceso y datos']];
     const tabBar = document.createElement('div');
     tabBar.className = 'tabs';
     tabBar.innerHTML = tabs.map(([id, n]) => `<button class="tab" data-tab="${id}">${n}</button>`).join('');
@@ -895,7 +996,7 @@
     const show = (id) => {
       $$('.tab', tabBar).forEach((t) => t.classList.toggle('on', t.dataset.tab === id));
       body.innerHTML = '';
-      ({ personal: setPersonal, grupos: setGroups, calendario: setCalendar, horarios: setSchedule, acceso: setAccess })[id](body);
+      ({ personal: setPersonal, grupos: setGroups, calendario: setCalendar, horarios: setSchedule, ueco: setUeco, acceso: setAccess })[id](body);
       m.body.scrollTop = 0;
     };
     tabBar.onclick = (e) => { const t = e.target.closest('.tab'); if (t) show(t.dataset.tab); };
@@ -1156,6 +1257,86 @@
     };
   }
 
+  // Acompañamientos de los niños y niñas de la UECO: filas = alumnado, columnas = semanas
+  function setUeco(el) {
+    const u = uecoData();
+    u.semanas.sort((a, b) => a.ini.localeCompare(b.ini));
+    const map = staffMap();
+    const staff = sortStaff(activeStaff().filter((p) => p.cat !== 'nodocente'));
+    const opts = (sel) => '<option value="">—</option>' + CATS.map((c) => {
+      const items = staff.filter((p) => (p.cat || 'otros') === c.id);
+      return items.length ? `<optgroup label="${c.name}">${items.map((p) => `<option value="${p.id}"${p.id === sel ? ' selected' : ''}>${esc(shortName(p))} · ${esc(p.cargo || '')}</option>`).join('')}</optgroup>` : '';
+    }).join('') + (sel && !map[sel] ? `<option value="${esc(sel)}" selected>(persona eliminada)</option>` : '');
+    const save = () => { Store.markDirty('ueco'); };
+    const cur = uecoWeek(state.date);
+    el.innerHTML = `<div class="set-section"><p>Quién acompaña a cada niño o niña de la UECO cada semana. Se muestra en la pantalla principal, encima de las sustituciones, en los días de esa semana. Si quien acompaña falta ese día, sale marcado en rojo. La web es pública: pon solo las <b>iniciales</b> del alumno/a, no su nombre.</p></div>
+      ${u.alumnos.length ? '' : `<div class="notice">${ICON.info}<span>Empieza añadiendo al alumnado y después las semanas.</span></div>`}
+      <div class="ueco-table-wrap"><table class="ueco-table">
+        <thead><tr><th class="ueco-th-kid">Alumno/a · clase</th>${u.semanas.map((w, i) => `<th class="${w === cur ? 'cur' : ''}">
+          <div class="uw-dates"><input type="date" data-w="${i}" data-f="ini" value="${esc(w.ini)}" aria-label="Desde"><input type="date" data-w="${i}" data-f="fin" value="${esc(w.fin)}" aria-label="Hasta"></div>
+          <button class="btn-link" data-rmw="${i}">Quitar semana</button></th>`).join('')}</tr></thead>
+        <tbody>${u.alumnos.map((al) => `<tr>
+          <td class="ueco-td-kid"><input type="text" data-al="${esc(al.id)}" data-f="nombre" value="${esc(al.nombre)}" placeholder="Iniciales"><input type="text" data-al="${esc(al.id)}" data-f="clase" value="${esc(al.clase || '')}" placeholder="Clase" class="cls"><button class="icon-x" data-rma="${esc(al.id)}" aria-label="Quitar a ${esc(al.nombre)}">${ICON.x}</button></td>
+          ${u.semanas.map((w, i) => `<td class="${w === cur ? 'cur' : ''}"><select data-w="${i}" data-a="${esc(al.id)}">${opts((w.a || {})[al.id])}</select></td>`).join('')}
+        </tr>`).join('')}</tbody>
+      </table></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <button class="btn btn-outline btn-sm" id="uAddKid">+ Añadir alumno/a</button>
+        <button class="btn btn-outline btn-sm" id="uAddWeek">+ Añadir semana</button>
+      </div>`;
+    el.onchange = (e) => {
+      const t = e.target;
+      if (t.dataset.a !== undefined) {
+        const w = u.semanas[t.dataset.w];
+        w.a = w.a || {};
+        if (t.value) w.a[t.dataset.a] = t.value; else delete w.a[t.dataset.a];
+        save();
+      } else if (t.dataset.w !== undefined) {
+        if (!t.value) return;
+        u.semanas[t.dataset.w][t.dataset.f] = t.value;
+        save();
+        setUeco(el);
+      } else if (t.dataset.al !== undefined) {
+        const al = u.alumnos.find((x) => x.id === t.dataset.al);
+        if (al) { al[t.dataset.f] = t.value.trim(); save(); }
+      }
+    };
+    el.onclick = (e) => {
+      const rw = e.target.closest('[data-rmw]');
+      if (rw) {
+        const w = u.semanas[rw.dataset.rmw];
+        confirmBox('Quitar semana', `¿Quitar la semana del ${shortDate(w.ini)} al ${shortDate(w.fin)}?`, 'Quitar', () => { u.semanas.splice(rw.dataset.rmw, 1); save(); setUeco(el); });
+      }
+      const ra = e.target.closest('[data-rma]');
+      if (ra) {
+        const al = u.alumnos.find((x) => x.id === ra.dataset.rma);
+        confirmBox('Quitar alumno/a', `¿Quitar a ${esc(al.nombre || 'este alumno/a')} de los acompañamientos?`, 'Quitar', () => {
+          u.alumnos = u.alumnos.filter((x) => x !== al);
+          for (const w of u.semanas) if (w.a) delete w.a[al.id];
+          save(); setUeco(el);
+        });
+      }
+      if (e.target.closest('#uAddKid')) {
+        u.alumnos.push({ id: 'u' + uid(), nombre: '', clase: '' });
+        save(); setUeco(el);
+        const ins = $$('.ueco-td-kid input[data-f="nombre"]', el);
+        if (ins.length) ins[ins.length - 1].focus();
+      }
+      if (e.target.closest('#uAddWeek')) {
+        // La semana siguiente a la última (de lunes a viernes)
+        const last = u.semanas[u.semanas.length - 1];
+        const base = last ? fromISO(last.fin) : fromISO(state.date);
+        const mon = new Date(base);
+        if (last) mon.setDate(mon.getDate() + ((8 - mon.getDay()) % 7 || 7));
+        else mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+        const fri = new Date(mon); fri.setDate(fri.getDate() + 4);
+        u.semanas.push({ ini: toISO(mon), fin: toISO(fri), a: {} });
+        save(); setUeco(el);
+        const wrap = $('.ueco-table-wrap', el); wrap.scrollLeft = wrap.scrollWidth;
+      }
+    };
+  }
+
   function setAccess(el) {
     const r = Store.repoInfo();
     const synced = Store.canSync();
@@ -1332,6 +1513,7 @@
     initBoardEvents();
     initDrag();
     initInstall();
+    initPresent();
     await Store.init();
     await Store.restoreSession();
     const hash = location.hash.slice(1);
