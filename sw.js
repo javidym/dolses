@@ -1,6 +1,6 @@
 /* Service worker: permite instalar la app y abrirla sin conexión.
  * Siempre intenta la red primero para mostrar los datos más recientes. */
-const CACHE = 'sustituciones-v8';
+const CACHE = 'sustituciones-v9';
 const SHELL = ['./', 'index.html', 'css/app.css', 'js/store.js', 'js/app.js', 'icons/icon.svg', 'icons/icon-192.png', 'img/escudo.jpg', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

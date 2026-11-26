@@ -346,6 +346,7 @@ code { background: #eef2f6; padding: 1px 6px; border-radius: 5px; font-size: .9e
   .palette { display: none !important; }
   .brand-text span { display: none; }
   .btn span { display: none; }
+  .btn-ueco span { display: inline; }
   .btn { padding: 9px 11px; }
   #btnInstall span { display: inline; }
   .date-text { font-size: 1.12rem; }
@@ -447,14 +448,12 @@ body:has(.publish-bar:not([hidden])) .toast { bottom: calc(150px + env(safe-area
 .hour-row:has(input:not(:checked)) { opacity: .55; }
 
 /* ---------- acompañamientos UECO ---------- */
-.ueco { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; border-left: 6px solid var(--sun); overflow: hidden; }
-.ueco-head { width: 100%; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 8px 14px; background: none; border: 0; cursor: pointer; text-align: left; }
-.ueco-title { font-weight: 800; color: var(--navy); font-size: .95rem; }
-.ueco-week { color: var(--muted); font-size: .85rem; font-weight: 600; }
-.ueco-fold { margin-left: auto; font-size: .78rem; font-weight: 700; color: var(--teal); }
-.ueco-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 6px; padding: 0 12px 10px; }
-.ueco.folded .ueco-list { display: none; }
-.ueco-item { display: flex; flex-direction: column; gap: 1px; padding: 5px 9px; border-radius: 9px; background: #fbf6ea; border: 1px solid #efe2c2; line-height: 1.2; min-width: 0; }
+.ueco-week { margin: 0 0 12px; color: var(--muted); font-weight: 600; }
+.ueco-alert { color: var(--danger); }
+.btn-ueco, .pueco { position: relative; }
+.btn-ueco.alert::after, .pueco.alert::after { content: ""; position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 50%; background: var(--danger); border: 2px solid #fff; }
+.ueco-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.ueco-item { display: flex; flex-direction: column; gap: 1px; padding: 8px 11px; border-radius: 9px; background: #fbf6ea; border: 1px solid #efe2c2; line-height: 1.2; min-width: 0; }
 .ueco-kid { font-size: .8rem; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ueco-kid small { font-weight: 600; }
 .ueco-who { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
@@ -484,7 +483,7 @@ body:has(.publish-bar:not([hidden])) .toast { bottom: calc(150px + env(safe-area
 body.present .topbar, body.present .foot, body.present .board-tools, body.present #palette,
 body.present .add-absence, body.present .select-hint, body.present .publish-bar,
 body.present .abs-actions, body.present .slot-hide, body.present .sub-x,
-body.present .datenav .icon-btn, body.present #todayBtn, body.present .ueco-fold { display: none !important; }
+body.present .datenav .icon-btn, body.present #todayBtn { display: none !important; }
 body.present { padding-bottom: 58px; }
 body.present .wrap { max-width: none; padding: 10px 14px 6px; }
 body.present .layout.editing { grid-template-columns: minmax(0, 1fr); }
@@ -497,4 +496,4 @@ body.present .board-head { margin-bottom: 8px; }
 .pbtn:hover { background: rgba(255, 255, 255, .26); }
 .pbtn.exit:hover { background: #f5c867; }
 .zoom-val { color: #fff; font-weight: 700; min-width: 48px; text-align: center; font-size: .9rem; }
-@media print { .ueco-fold, .present-bar { display: none !important; } }
+@media print { .btn-ueco, .present-bar { display: none !important; } }

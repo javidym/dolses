@@ -177,7 +177,6 @@
   /* ================= acompañamientos UECO =================
    * D().ueco = { alumnos: [{id, nombre, clase}],
    *              semanas: [{ini, fin, a: {idAlumno: idMaestro}}] } */
-  const LS_UECO_FOLD = 'sustituciones.uecoPlegado';
   function uecoData() {
     const u = D().ueco || (D().ueco = {});
     u.alumnos = u.alumnos || [];
@@ -186,38 +185,42 @@
   }
   const uecoWeek = (date) => uecoData().semanas.find((w) => w.ini <= date && date <= w.fin) || null;
   const shortDate = (iso) => { const d = fromISO(iso); return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`; };
-  function renderUeco() {
-    const el = $('#ueco');
+  // Semana de acompañamientos del día elegido (null si no hay o no es lectivo)
+  function uecoToday() {
     const date = state.date;
     const u = uecoData();
     const w = uecoWeek(date);
-    if (!w || !u.alumnos.length || isWeekend(date) || calOf(date).festivo) { el.hidden = true; return; }
+    if (!w || !u.alumnos.length || isWeekend(date) || calOf(date).festivo) return null;
     const map = staffMap();
-    const day = dayOf(date);
-    const absent = new Set(day.ausencias.map((a) => a.t));
-    let folded = false;
-    try { folded = localStorage.getItem(LS_UECO_FOLD) === '1'; } catch { /* nada */ }
-    const items = u.alumnos.map((al) => {
+    const absent = new Set(dayOf(date).ausencias.map((a) => a.t));
+    const rows = u.alumnos.map((al) => {
       const p = map[(w.a || {})[al.id]];
-      const off = p && absent.has(p.id);
-      return `<div class="ueco-item${off ? ' off' : ''}${p ? '' : ' empty'}" title="${esc(al.nombre)} ${esc(al.clase || '')} → ${p ? esc(fullName(p)) + ' · ' + esc(p.cargo || '') : 'sin asignar'}${off ? ' · falta hoy' : ''}">
+      return { al, p, off: !!(p && absent.has(p.id)) };
+    });
+    return { w, rows, offs: rows.filter((r) => r.off).length };
+  }
+  // El botón «UECO» solo aparece si hay acompañamientos ese día; avisa si falta algún acompañante
+  function renderUeco() {
+    const t = uecoToday();
+    for (const b of [$('#btnUeco'), $('#presentUeco')]) {
+      b.hidden = !t;
+      b.classList.toggle('alert', !!(t && t.offs));
+      b.title = t ? (t.offs ? `Acompañamientos UECO · ${t.offs} acompañante${t.offs > 1 ? 's' : ''} falta hoy` : 'Ver los acompañamientos UECO de esta semana') : '';
+    }
+  }
+  function openUeco() {
+    const t = uecoToday();
+    if (!t) return;
+    const items = t.rows.map(({ al, p, off }) => `<div class="ueco-item${off ? ' off' : ''}${p ? '' : ' empty'}">
         <span class="ueco-kid">${esc(al.nombre)}${al.clase ? ` <small>${esc(al.clase)}</small>` : ''}</span>
         <span class="ueco-who"><b>${p ? esc(shortName(p)) : '—'}</b>${p ? `<small>${off ? '⚠ falta hoy' : esc(p.cargo || '')}</small>` : ''}</span>
-      </div>`;
-    }).join('');
-    el.hidden = false;
-    el.classList.toggle('folded', folded);
-    el.innerHTML = `<button class="ueco-head" aria-expanded="${!folded}">
-        <span class="ueco-title">Acompañamientos UECO</span>
-        <span class="ueco-week">Semana del ${esc(shortDate(w.ini))} al ${esc(shortDate(w.fin))}</span>
-        <span class="ueco-fold">${folded ? 'Mostrar' : 'Ocultar'}</span>
-      </button>
-      <div class="ueco-list">${items}</div>`;
-    $('.ueco-head', el).onclick = () => {
-      try { localStorage.setItem(LS_UECO_FOLD, folded ? '0' : '1'); } catch { /* nada */ }
-      renderUeco();
-      if (present.on && present.auto) fitScreen();
-    };
+      </div>`).join('');
+    modal({
+      title: 'Acompañamientos UECO',
+      wide: true,
+      body: `<p class="ueco-week">Semana del ${esc(shortDate(t.w.ini))} al ${esc(shortDate(t.w.fin))}${t.offs ? ` · <b class="ueco-alert">${t.offs} acompañante${t.offs > 1 ? 's' : ''} falta hoy</b>` : ''}</p>
+        <div class="ueco-list">${items}</div>`,
+    });
   }
 
   /* ================= modo pizarra (ajustar a la pantalla) ================= */
@@ -261,6 +264,8 @@
   }
   function initPresent() {
     $('#btnPresent').onclick = () => setPresent(true);
+    $('#btnUeco').onclick = openUeco;
+    $('#presentUeco').onclick = openUeco;
     $('#presentExit').onclick = () => setPresent(false);
     $('#zoomIn').onclick = () => zoomBy(0.1);
     $('#zoomOut').onclick = () => zoomBy(-0.1);
@@ -1269,7 +1274,7 @@
     }).join('') + (sel && !map[sel] ? `<option value="${esc(sel)}" selected>(persona eliminada)</option>` : '');
     const save = () => { Store.markDirty('ueco'); };
     const cur = uecoWeek(state.date);
-    el.innerHTML = `<div class="set-section"><p>Quién acompaña a cada niño o niña de la UECO cada semana. Se muestra en la pantalla principal, encima de las sustituciones, en los días de esa semana. Si quien acompaña falta ese día, sale marcado en rojo. La web es pública: pon solo las <b>iniciales</b> del alumno/a, no su nombre.</p></div>
+    el.innerHTML = `<div class="set-section"><p>Quién acompaña a cada niño o niña de la UECO cada semana. Se consulta con el botón «UECO» de la pantalla principal, que solo aparece los días de esas semanas. Si quien acompaña falta ese día, el botón lleva un punto rojo y la persona sale marcada en rojo. La web es pública: pon solo las <b>iniciales</b> del alumno/a, no su nombre.</p></div>
       ${u.alumnos.length ? '' : `<div class="notice">${ICON.info}<span>Empieza añadiendo al alumnado y después las semanas.</span></div>`}
       <div class="ueco-table-wrap"><table class="ueco-table">
         <thead><tr><th class="ueco-th-kid">Alumno/a · clase</th>${u.semanas.map((w, i) => `<th class="${w === cur ? 'cur' : ''}">
