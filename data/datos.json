@@ -105,7 +105,7 @@
  },
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-27T08:30:52.352Z",
+ "actualizado": "2026-11-27T08:31:30.380Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -1276,7 +1276,11 @@
     {
      "id": "a4v0kxr",
      "t": "t59",
-     "s": {}
+     "s": {},
+     "ocultas": [
+      "1",
+      "2"
+     ]
     },
     {
      "id": "sgqwhn2",
