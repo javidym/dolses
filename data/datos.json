@@ -105,7 +105,7 @@
  },
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-27T08:29:18.398Z",
+ "actualizado": "2026-11-27T08:30:34.968Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -1310,7 +1310,11 @@
     {
      "id": "fopr7jx",
      "t": "t32",
-     "s": {}
+     "s": {},
+     "ocultas": [
+      "6",
+      "4"
+     ]
     }
    ]
   }
