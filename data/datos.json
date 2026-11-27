@@ -105,7 +105,7 @@
  },
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-26T10:56:15.574Z",
+ "actualizado": "2026-11-27T05:07:01.154Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -183,451 +183,458 @@
   {
    "id": "t01",
    "nombre": "Ainoa",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 2 años A",
+   "apellidos": "Solís Aniorte",
+   "cargo": "Tutora Infantil 2 años",
    "cat": "tutor"
   },
   {
    "id": "t02",
    "nombre": "Rosa",
-   "apellidos": "",
+   "apellidos": "Núñez Ruiz",
    "cargo": "Educadora Infantil 2 años",
    "cat": "nodocente"
   },
   {
    "id": "t03",
    "nombre": "María",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 3A",
+   "apellidos": "Guerola Martínez",
+   "cargo": "Tutora Infantil 3 A",
    "cat": "tutor"
   },
   {
    "id": "t04",
    "nombre": "Marta",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 3B",
+   "apellidos": "Vicedo Tortosa",
+   "cargo": "Tutora Infantil 3 B",
    "cat": "tutor"
   },
   {
    "id": "t05",
    "nombre": "Eva",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 3C",
+   "apellidos": "Serrano Almendro",
+   "cargo": "Tutora Infantil 3 C",
    "cat": "tutor"
   },
   {
    "id": "t06",
-   "nombre": "Marien",
-   "apellidos": "",
+   "nombre": "Mª Encarnación",
+   "alias": "Marien",
+   "apellidos": "Claver Ortells",
    "cargo": "Apoyo Infantil 3 años",
    "cat": "apoyo"
   },
   {
    "id": "t07",
-   "nombre": "Angie",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 4A",
+   "nombre": "Angie Ximena",
+   "alias": "Angie",
+   "apellidos": "Gómez Loaiza",
+   "cargo": "Tutora Infantil 4 A",
    "cat": "tutor"
   },
   {
    "id": "t08",
    "nombre": "Ana Laura",
    "alias": "Ana",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 4B",
+   "apellidos": "Lavios García",
+   "cargo": "Tutora Infantil 4 B",
    "cat": "tutor"
   },
   {
    "id": "t09",
    "nombre": "Elena",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 4C",
+   "apellidos": "Ten Ayet",
+   "cargo": "Tutora Infantil 4 C",
    "cat": "tutor"
   },
   {
    "id": "t10",
-   "nombre": "Mariluz",
-   "apellidos": "",
+   "nombre": "Mª Luz",
+   "alias": "Mariluz",
+   "apellidos": "López Castillejos",
    "cargo": "Apoyo Infantil 4 años",
    "cat": "apoyo"
   },
   {
    "id": "t11",
-   "nombre": "Mari",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 5A",
+   "nombre": "Mª Carmen",
+   "alias": "Mari",
+   "apellidos": "Perea Mira",
+   "cargo": "Tutora Infantil 5 A",
    "cat": "tutor"
   },
   {
    "id": "t12",
    "nombre": "Sheila",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 5B",
+   "apellidos": "Gómez Gómez",
+   "cargo": "Tutora Infantil 5 B",
    "cat": "tutor"
   },
   {
    "id": "t13",
    "nombre": "Belén",
-   "apellidos": "",
-   "cargo": "Tutora Infantil 5C",
+   "apellidos": "Mora Ferrández",
+   "cargo": "Tutora Infantil 5 C",
    "cat": "tutor"
   },
   {
    "id": "t14",
    "nombre": "Jorge",
-   "apellidos": "",
+   "apellidos": "Sancho Rodríguez",
    "cargo": "Apoyo Infantil 5 años",
    "cat": "apoyo"
   },
   {
    "id": "t15",
    "nombre": "Paula",
-   "apellidos": "",
+   "apellidos": "Fabri Vázquez",
    "cargo": "Inglés Infantil",
    "cat": "especialista"
   },
   {
    "id": "t16",
-   "nombre": "Chisti",
-   "apellidos": "",
-   "cargo": "Tutora 1ºA",
+   "nombre": "Cristina",
+   "alias": "Chisti",
+   "apellidos": "Lorenzo Matamoros",
+   "cargo": "Tutora 1º A",
    "cat": "tutor"
   },
   {
    "id": "t17",
    "nombre": "Ana",
-   "apellidos": "",
-   "cargo": "Tutora 1ºB",
+   "apellidos": "Taberner Segarra",
+   "cargo": "Tutora 1º B",
    "cat": "tutor"
   },
   {
    "id": "t18",
    "nombre": "Natalia",
-   "apellidos": "",
-   "cargo": "Tutora 1ºC",
+   "apellidos": "Peris Cubel",
+   "cargo": "Tutora 1º C",
    "cat": "tutor"
   },
   {
    "id": "t19",
    "nombre": "Leire",
-   "apellidos": "",
-   "cargo": "Tutora 2ºA",
+   "apellidos": "Roche Sánchez",
+   "cargo": "Tutora 2º A",
    "cat": "tutor"
   },
   {
    "id": "t20",
    "nombre": "Rocío",
-   "apellidos": "",
-   "cargo": "Tutora 2ºB",
+   "apellidos": "García Ruiz",
+   "cargo": "Tutora 2º B",
    "cat": "tutor"
   },
   {
    "id": "t21",
    "nombre": "Lidia",
-   "apellidos": "",
-   "cargo": "Tutora 2ºC",
+   "apellidos": "Zarco Marchante",
+   "cargo": "Tutora 2º C",
    "cat": "tutor"
   },
   {
    "id": "t22",
-   "nombre": "Lia",
-   "apellidos": "",
-   "cargo": "Tutora 3ºA",
+   "nombre": "Amelia",
+   "alias": "Lia",
+   "apellidos": "Martínez Lledo",
+   "cargo": "Tutora 3º A",
    "cat": "tutor"
   },
   {
    "id": "t23",
    "nombre": "Gloria",
-   "apellidos": "",
-   "cargo": "Tutora 3ºB",
+   "apellidos": "Ruiz Oltra",
+   "cargo": "Tutora 3º B",
    "cat": "tutor"
   },
   {
    "id": "t24",
    "nombre": "Andrea",
-   "apellidos": "",
-   "cargo": "Tutora 3ºC",
+   "apellidos": "Gilabert González",
+   "cargo": "Tutora 3º C",
    "cat": "tutor"
   },
   {
    "id": "t25",
    "nombre": "María",
-   "apellidos": "",
-   "cargo": "Tutora 4ºA",
+   "apellidos": "Ballester Engo",
+   "cargo": "Tutora 4º A",
    "cat": "tutor"
   },
   {
    "id": "t26",
    "nombre": "Lorena",
-   "apellidos": "",
-   "cargo": "Tutora 4ºB",
+   "apellidos": "Rodríguez Cano",
+   "cargo": "Tutora 4º B",
    "cat": "tutor"
   },
   {
    "id": "t27",
    "nombre": "Yolanda",
-   "apellidos": "",
-   "cargo": "Tutora 4ºC",
+   "apellidos": "Ruiz Nieto",
+   "cargo": "Tutora 4º C",
    "cat": "tutor"
   },
   {
    "id": "t28",
-   "nombre": "Mario",
-   "apellidos": "",
-   "cargo": "Tutor 5ºA",
+   "nombre": "Mario José",
+   "alias": "Mario",
+   "apellidos": "Martínez Gutiérrez",
+   "cargo": "Tutor 5º A",
    "cat": "tutor"
   },
   {
    "id": "t29",
    "nombre": "Cristina",
-   "apellidos": "",
-   "cargo": "Tutora 5ºB",
+   "alias": "Cris",
+   "apellidos": "Rodríguez Avilés",
+   "cargo": "Tutora 5º B",
    "cat": "tutor"
   },
   {
    "id": "t30",
    "nombre": "Aquilino",
-   "apellidos": "",
-   "cargo": "Tutor 5ºC",
+   "apellidos": "Horneros Mira",
+   "cargo": "Tutor 5º C",
    "cat": "tutor"
   },
   {
    "id": "t31",
    "nombre": "Irina",
-   "apellidos": "",
-   "cargo": "Tutora 6ºA",
+   "apellidos": "Almarcha Vicent",
+   "cargo": "Tutora 6º A",
    "cat": "tutor"
   },
   {
    "id": "t32",
-   "nombre": "Cris",
-   "apellidos": "",
-   "cargo": "Tutora 6ºB",
+   "nombre": "Cristina",
+   "alias": "Cris",
+   "apellidos": "Gimeno Suárez",
+   "cargo": "Tutora 6º B",
    "cat": "tutor"
   },
   {
    "id": "t33",
-   "nombre": "Jesús",
-   "apellidos": "",
-   "cargo": "Tutor 6ºC",
+   "nombre": "Jesús Miguel",
+   "alias": "Jesús",
+   "apellidos": "Fullana González",
+   "cargo": "Tutor 6º C",
    "cat": "tutor"
   },
   {
    "id": "t34",
-   "nombre": "Javi",
-   "apellidos": "",
+   "nombre": "Fco. Javier",
+   "alias": "Javi",
+   "apellidos": "Alcaraz Griñán",
    "cargo": "Robótica / TIC",
    "cat": "especialista"
   },
   {
    "id": "t35",
    "nombre": "Antonio",
-   "apellidos": "",
+   "apellidos": "Ferrández Manresa",
    "cargo": "Religión",
    "cat": "especialista"
   },
   {
    "id": "t36",
    "nombre": "María",
-   "apellidos": "",
+   "apellidos": "Soler García",
    "cargo": "Música 1º, 2º y 3º",
    "cat": "especialista"
   },
   {
    "id": "t37",
    "nombre": "Andreu",
-   "apellidos": "",
+   "apellidos": "Signes Sebastià",
    "cargo": "Música 4º, 5º y 6º",
    "cat": "especialista"
   },
   {
    "id": "t38",
    "nombre": "Saray",
-   "apellidos": "",
+   "apellidos": "Ferrer Moreno",
    "cargo": "Inglés 1er ciclo",
    "cat": "especialista"
   },
   {
    "id": "t39",
    "nombre": "Carlos",
-   "apellidos": "",
+   "apellidos": "Azorín Maciá",
    "cargo": "Inglés 2º ciclo",
    "cat": "especialista"
   },
   {
    "id": "t40",
    "nombre": "Raúl",
-   "apellidos": "",
+   "apellidos": "González Domínguez",
    "cargo": "Inglés 3er ciclo",
    "cat": "especialista"
   },
   {
    "id": "t41",
    "nombre": "Julia",
-   "apellidos": "",
+   "apellidos": "Recuero Muñoz",
    "cargo": "Ed. Física 1er ciclo",
    "cat": "especialista"
   },
   {
    "id": "t42",
    "nombre": "Iván",
-   "apellidos": "",
+   "apellidos": "Esclapez Escudero",
    "cargo": "Ed. Física 2º ciclo",
    "cat": "especialista"
   },
   {
    "id": "t43",
    "nombre": "Pedro",
-   "apellidos": "",
+   "alias": "Pedro",
+   "apellidos": "Rebollo Samper",
    "cargo": "Ed. Física 3er ciclo",
    "cat": "especialista"
   },
   {
    "id": "t44",
    "nombre": "Rubén",
-   "apellidos": "",
+   "apellidos": "Muñoz López",
    "cargo": "Ed. Física apoyo · Secretario",
    "cat": "direccion"
   },
   {
    "id": "t45",
    "nombre": "Raquel",
-   "apellidos": "",
+   "apellidos": "Morcillo Azor",
    "cargo": "Competencia lectora 2º y 3º",
    "cat": "especialista"
   },
   {
    "id": "t46",
    "nombre": "Víctor",
-   "apellidos": "",
+   "apellidos": "Aragón Navas",
    "cargo": "Competencia matemática 5º y 6º",
    "cat": "especialista"
   },
   {
    "id": "t47",
    "nombre": "Yarisa",
-   "apellidos": "",
+   "apellidos": "Arenas Roch",
    "cargo": "Atención domiciliaria",
    "cat": "otros"
   },
   {
    "id": "t48",
    "nombre": "Nerea",
-   "apellidos": "",
+   "apellidos": "García Ayuste",
    "cargo": "PT Infantil",
    "cat": "inclusion"
   },
   {
    "id": "t49",
    "nombre": "Ángela",
-   "apellidos": "",
+   "apellidos": "Ruiz Medina",
    "cargo": "PT UECO",
    "cat": "inclusion"
   },
   {
    "id": "t50",
    "nombre": "Paula",
-   "apellidos": "",
+   "apellidos": "Gisbert Sabas",
    "cargo": "PT UECO",
    "cat": "inclusion"
   },
   {
    "id": "t51",
    "nombre": "Mª José",
-   "apellidos": "",
+   "apellidos": "Asensio Juan",
    "cargo": "PT Primaria",
    "cat": "inclusion"
   },
   {
    "id": "t52",
-   "nombre": "Quim",
-   "apellidos": "",
+   "nombre": "Joaquím",
+   "alias": "Quim",
+   "apellidos": "Martí Aparicio",
    "cargo": "PT Primaria",
    "cat": "inclusion"
   },
   {
    "id": "t53",
    "nombre": "Diego",
-   "apellidos": "",
+   "apellidos": "Gualde Sánchez",
    "cargo": "PT Primaria",
    "cat": "inclusion"
   },
   {
    "id": "t54",
    "nombre": "Sergio",
-   "apellidos": "",
+   "apellidos": "Galipienso Noguera",
    "cargo": "AL Infantil y Primaria",
    "cat": "inclusion"
   },
   {
    "id": "t55",
    "nombre": "Marta",
-   "apellidos": "",
+   "apellidos": "Betoret García",
    "cargo": "AL Primaria",
    "cat": "inclusion"
   },
   {
    "id": "t56",
    "nombre": "Sara",
-   "apellidos": "",
+   "apellidos": "Esteban Platero",
    "cargo": "AL UECO",
    "cat": "inclusion"
   },
   {
    "id": "t57",
-   "nombre": "Inma",
-   "apellidos": "",
+   "nombre": "Mª Inmaculada",
+   "alias": "Inma",
+   "apellidos": "López Jiménez",
    "cargo": "Orientación",
    "cat": "inclusion"
   },
   {
    "id": "t58",
    "nombre": "Marta",
-   "apellidos": "",
+   "apellidos": "García Szajner",
    "cargo": "Orientación",
    "cat": "inclusion"
   },
   {
    "id": "t59",
    "nombre": "Sara",
-   "apellidos": "",
+   "apellidos": "Conesa Garre",
    "cargo": "Educadora UECO",
    "cat": "nodocente"
   },
   {
    "id": "t60",
    "nombre": "Débora",
-   "apellidos": "",
+   "apellidos": "Sánchez Maquilón",
    "cargo": "Educadora Ed. Especial",
    "cat": "nodocente"
   },
   {
    "id": "t61",
    "nombre": "María José",
-   "apellidos": "",
+   "apellidos": "Ortega Gaspar",
    "cargo": "Educadora social",
    "cat": "nodocente"
   },
   {
    "id": "t63",
    "nombre": "Isaac",
-   "apellidos": "",
+   "apellidos": "Bonafé Leida",
    "cargo": "Director",
    "cat": "direccion"
   },
   {
    "id": "t64",
    "nombre": "Noelia",
-   "apellidos": "",
+   "apellidos": "Herreros Robles",
    "cargo": "Jefa de estudios- PT",
    "cat": "direccion"
-  },
-  {
-   "id": "t67",
-   "nombre": "Mª Dolores",
-   "apellidos": "",
-   "cargo": "Conserje",
-   "cat": "nodocente"
   },
   {
    "id": "p0oud00f",
@@ -635,6 +642,14 @@
    "apellidos": "",
    "cargo": "No hay sustitución",
    "cat": "tutor"
+  },
+  {
+   "id": "puyhguua",
+   "nombre": "Celia",
+   "apellidos": "",
+   "cargo": "Tutora Infantil 4 A",
+   "cat": "tutor",
+   "alias": "Celia"
   }
  ],
  "grupos": {
@@ -1185,12 +1200,11 @@
      "id": "rwk7dbe",
      "t": "t11",
      "s": {
-      "1": "t14",
-      "2": "t14",
-      "3": "t14"
+      "1": "t48",
+      "2": "t48",
+      "3": "t48"
      },
      "ocultas": [
-      "P",
       "4",
       "5",
       "6"
@@ -1200,7 +1214,6 @@
      "id": "3t2gjcq",
      "t": "t26",
      "s": {
-      "1": "t48",
       "5": "t51",
       "6": "t42"
      },
