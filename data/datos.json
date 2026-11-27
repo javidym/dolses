@@ -105,7 +105,7 @@
  },
  "version": 1,
  "curso": "2026-2027",
- "actualizado": "2026-11-27T07:58:11.718Z",
+ "actualizado": "2026-11-27T08:28:14.804Z",
  "ajustes": {
   "mesesIntensivos": [
    6,
@@ -1260,6 +1260,36 @@
       "D": "t10"
      },
      "dia": true
+    }
+   ]
+  },
+  "2026-11-30": {
+   "ausencias": [
+    {
+     "id": "udcjsn9",
+     "t": "t46",
+     "s": {
+      "D": "-"
+     },
+     "dia": true
+    },
+    {
+     "id": "a4v0kxr",
+     "t": "t59",
+     "s": {}
+    },
+    {
+     "id": "sgqwhn2",
+     "t": "t40",
+     "s": {
+      "D": "-"
+     },
+     "dia": true
+    },
+    {
+     "id": "rw35p9o",
+     "t": "t20",
+     "s": {}
     }
    ]
   }
